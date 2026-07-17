@@ -143,6 +143,11 @@
     border-radius: 6px;
   }
   .list-item .actions button:hover { background: var(--border); color: var(--text); }
+  .list-item .actions button:disabled { opacity: .25; cursor: not-allowed; }
+  .list-item .actions button:disabled:hover { background: transparent; color: var(--text-2); }
+  .cat-edit { flex: 1; display: flex; gap: 6px; align-items: center; }
+  .cat-edit input { padding: 6px 8px; font-size: 14px; flex: 1; min-width: 0; }
+  .cat-edit select { padding: 6px 8px; font-size: 14px; width: auto; min-width: 90px; }
   .empty { text-align: center; padding: 24px; color: var(--text-2); font-size: 14px; }
 
   .tag {
@@ -863,25 +868,85 @@ document.getElementById('catAdd').addEventListener('click', () => {
   toast('Category added');
 });
 
+let editingCatId = null;
+
+function moveCat(id, dir) {
+  const i = db.categories.findIndex(c => c.id === id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= db.categories.length) return;
+  [db.categories[i], db.categories[j]] = [db.categories[j], db.categories[i]];
+  save(); renderSettings();
+}
+
+function saveEditCat(id) {
+  const nameEl  = document.querySelector(`input[data-edit-name="${id}"]`);
+  const groupEl = document.querySelector(`select[data-edit-group="${id}"]`);
+  if (!nameEl || !groupEl) return;
+  const name = nameEl.value.trim();
+  if (!name) { toast('Name cannot be empty'); return; }
+  const cat = db.categories.find(c => c.id === id);
+  if (cat) { cat.name = name; cat.group = groupEl.value; }
+  editingCatId = null;
+  save(); renderSettings(); renderDashboard();
+  toast('Category updated');
+}
+
 function renderSettings() {
   const el = document.getElementById('catList');
   if (!db.categories.length) { el.innerHTML = '<div class="empty">No categories.</div>'; return; }
-  el.innerHTML = db.categories.map(c => `
-    <div class="list-item">
-      <div>
-        <div><b>${escapeHTML(c.name)}</b><span class="tag ${c.group.toLowerCase()}">${c.group}</span></div>
-      </div>
-      <div class="actions">
-        <button title="Delete" data-del-cat="${c.id}">✕</button>
-      </div>
-    </div>`).join('');
+  const groupOpts = (sel) => ['Needs', 'Wants', 'Savings']
+    .map(g => `<option value="${g}"${g === sel ? ' selected' : ''}>${g}</option>`).join('');
+
+  el.innerHTML = db.categories.map((c, i) => {
+    const isFirst = i === 0;
+    const isLast  = i === db.categories.length - 1;
+
+    if (c.id === editingCatId) {
+      return `
+        <div class="list-item">
+          <div class="cat-edit">
+            <input type="text" data-edit-name="${c.id}" value="${escapeHTML(c.name)}" autocomplete="off" />
+            <select data-edit-group="${c.id}">${groupOpts(c.group)}</select>
+          </div>
+          <div class="actions">
+            <button title="Save"   data-save-cat="${c.id}"   style="color:var(--success);font-size:18px">✓</button>
+            <button title="Cancel" data-cancel-cat="${c.id}" style="font-size:18px">✕</button>
+          </div>
+        </div>`;
+    }
+    return `
+      <div class="list-item">
+        <div>
+          <div><b>${escapeHTML(c.name)}</b><span class="tag ${c.group.toLowerCase()}">${c.group}</span></div>
+        </div>
+        <div class="actions">
+          <button title="Move up"   data-up-cat="${c.id}"   ${isFirst ? 'disabled' : ''}>↑</button>
+          <button title="Move down" data-down-cat="${c.id}" ${isLast  ? 'disabled' : ''}>↓</button>
+          <button title="Edit"      data-edit-cat="${c.id}">✎</button>
+          <button title="Delete"    data-del-cat="${c.id}">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  el.querySelectorAll('[data-up-cat]').forEach(b   => b.addEventListener('click', () => moveCat(b.dataset.upCat,   -1)));
+  el.querySelectorAll('[data-down-cat]').forEach(b => b.addEventListener('click', () => moveCat(b.dataset.downCat,  1)));
+  el.querySelectorAll('[data-edit-cat]').forEach(b => b.addEventListener('click', () => {
+    editingCatId = b.dataset.editCat; renderSettings();
+    setTimeout(() => document.querySelector(`input[data-edit-name="${editingCatId}"]`)?.focus(), 0);
+  }));
+  el.querySelectorAll('[data-cancel-cat]').forEach(b => b.addEventListener('click', () => { editingCatId = null; renderSettings(); }));
+  el.querySelectorAll('[data-save-cat]').forEach(b   => b.addEventListener('click', () => saveEditCat(b.dataset.saveCat)));
+  el.querySelectorAll('input[data-edit-name]').forEach(inp => inp.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') saveEditCat(inp.dataset.editName);
+    if (e.key === 'Escape') { editingCatId = null; renderSettings(); }
+  }));
   el.querySelectorAll('[data-del-cat]').forEach(b => b.addEventListener('click', () => {
     const cat = db.categories.find(c => c.id === b.dataset.delCat);
     const inUse = db.actual.some(x => x.categoryId === cat.id) || db.planned.some(x => x.categoryId === cat.id);
     if (inUse && !confirm(`"${cat.name}" is used by existing expenses. Delete anyway? (entries will show "Unknown".)`)) return;
     else if (!inUse && !confirm(`Delete "${cat.name}"?`)) return;
     db.categories = db.categories.filter(c => c.id !== b.dataset.delCat);
-    save(); renderSettings();
+    save(); renderSettings(); renderDashboard();
   }));
 }
 
