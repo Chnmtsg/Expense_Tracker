@@ -82,6 +82,8 @@
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
   @media (max-width: 420px) { .grid-3 { grid-template-columns: 1fr 1fr; } }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  @media (max-width: 520px) { .grid-4 { grid-template-columns: 1fr 1fr; } }
 
   .kpi {
     background: var(--surface); border: 1px solid var(--border);
@@ -336,10 +338,11 @@
     <input type="date" id="dashTo" aria-label="To date" />
   </div>
 
-  <div class="grid-3">
+  <div class="grid-4">
     <div class="kpi good"><div class="label">Total Income</div><div class="value" id="kpiIncome">₮0</div></div>
     <div class="kpi bad"><div class="label">Total Expenses</div><div class="value" id="kpiExpenses">₮0</div></div>
     <div class="kpi accent"><div class="label">Net Balance</div><div class="value" id="kpiNet">₮0</div></div>
+    <div class="kpi"><div class="label">Planned Balance</div><div class="value" id="kpiPlannedNet">₮0</div></div>
   </div>
 
   <div class="card">
@@ -1332,11 +1335,16 @@ function renderDashboard() {
   const actual  = db.actual.filter(x  => inRange(x.date, from, to));
   const planned = db.planned.filter(x => inRange(x.date, from, to));
 
-  const totalIncome = income.reduce((s,x) => s + (+x.amount||0), 0);
-  const totalExp    = actual.reduce((s,x) => s + (+x.amount||0), 0);
+  const totalIncome  = income.reduce((s,x) => s + (+x.amount||0), 0);
+  const totalExp     = actual.reduce((s,x) => s + (+x.amount||0), 0);
+  const totalPlanned = planned.reduce((s,x) => s + (+x.amount||0), 0);
+  const plannedNet   = totalIncome - totalPlanned;
   document.getElementById('kpiIncome').textContent = fmt(totalIncome);
   document.getElementById('kpiExpenses').textContent = fmt(totalExp);
   document.getElementById('kpiNet').textContent = fmt(totalIncome - totalExp);
+  const plannedNetEl = document.getElementById('kpiPlannedNet');
+  plannedNetEl.textContent = fmt(plannedNet);
+  plannedNetEl.style.color = plannedNet > 0 ? 'var(--success)' : (plannedNet < 0 ? 'var(--danger)' : 'var(--text)');
 
   // Needs/Wants/Savings donut
   const groups = { Needs: 0, Wants: 0, Savings: 0 };
