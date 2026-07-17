@@ -1,4 +1,4 @@
-a<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -288,6 +288,11 @@ a<!DOCTYPE html>
   .salary-summary .value { color: white; font-size: 24px; }
 
   .helper { font-size: 11px; color: var(--text-2); margin-top: 4px; }
+  .required-mark { color: var(--danger); font-weight: 700; }
+  input.invalid, select.invalid {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, .15);
+  }
   .row-inline { display: flex; gap: 8px; align-items: center; }
   .toast {
     position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
@@ -376,11 +381,11 @@ a<!DOCTYPE html>
     <h3>Inputs</h3>
     <label>Pay Date</label><input type="date" id="sDate" />
 
+    <label>Hourly Rate (₮) <span class="required-mark">*</span></label>
+    <input type="text" id="sHourly" class="money-input" inputmode="numeric" autocomplete="off" placeholder="0" aria-required="true" />
+    <div class="helper">Required — all salary calculations are based on this.</div>
+
     <div class="grid-2">
-      <div>
-        <label>Hourly Rate (₮)</label>
-        <input type="text" id="sHourly" class="money-input" inputmode="numeric" autocomplete="off" placeholder="0" />
-      </div>
       <div>
         <label>Normal Hours</label>
         <input type="text" id="sNormal" inputmode="decimal" autocomplete="off" placeholder="0" />
@@ -841,10 +846,19 @@ function calcSalary() {
   return { normalPay, otPay, ntPay, otntPay, fieldPay, gross, si, wht, net };
 }
 sIds.forEach(id => document.getElementById(id).addEventListener('input', calcSalary));
+document.getElementById('sHourly').addEventListener('input', () => document.getElementById('sHourly').classList.remove('invalid'));
 
 document.getElementById('sSave').addEventListener('click', () => {
+  const hourlyEl = document.getElementById('sHourly');
+  if (unnum(hourlyEl.value) <= 0) {
+    hourlyEl.classList.add('invalid');
+    hourlyEl.focus();
+    toast('Hourly Rate is required');
+    return;
+  }
+  hourlyEl.classList.remove('invalid');
   const r = calcSalary();
-  if (r.net <= 0) { toast('Enter salary details first'); return; }
+  if (r.net <= 0) { toast('Enter hours or field days'); return; }
   const date = document.getElementById('sDate').value || todayISO();
   const record = {
     id: uid(), date,
