@@ -39,6 +39,98 @@
     --shadow: 0 1px 3px rgba(0,0,0,.4);
     --shadow-lg: 0 10px 30px rgba(0,0,0,.5);
   }
+  html[data-theme="sepia"] {
+    --primary: #B45309;
+    --primary-2: #D97706;
+    --bg: #F5EDD8;
+    --surface: #FFFAEC;
+    --surface-2: #EEE2C4;
+    --text: #3D2E1F;
+    --text-2: #6B5B4A;
+    --border: #E1D3B0;
+    --needs: #7C2D12;
+    --wants: #D97706;
+    --savings: #65A30D;
+  }
+  html[data-theme="ocean"] {
+    --primary: #0891B2;
+    --primary-2: #06B6D4;
+    --bg: #E0F2FE;
+    --surface: #F0F9FF;
+    --surface-2: #DBEAFE;
+    --text: #0C4A6E;
+    --text-2: #0369A1;
+    --border: #BAE6FD;
+    --needs: #0891B2;
+    --wants: #F59E0B;
+    --savings: #0D9488;
+  }
+  html[data-theme="forest"] {
+    --primary: #059669;
+    --primary-2: #10B981;
+    --bg: #ECFDF5;
+    --surface: #F0FDF4;
+    --surface-2: #DCFCE7;
+    --text: #064E3B;
+    --text-2: #047857;
+    --border: #A7F3D0;
+    --needs: #10B981;
+    --wants: #CA8A04;
+    --savings: #059669;
+  }
+  html[data-theme="rose"] {
+    --primary: #DB2777;
+    --primary-2: #EC4899;
+    --bg: #FDF2F8;
+    --surface: #FFF7FB;
+    --surface-2: #FCE7F3;
+    --text: #500724;
+    --text-2: #9D174D;
+    --border: #FBCFE8;
+    --needs: #DB2777;
+    --wants: #F59E0B;
+    --savings: #10B981;
+  }
+  html[data-theme="midnight"] {
+    --primary: #A78BFA;
+    --primary-2: #C4B5FD;
+    --bg: #0F0A1F;
+    --surface: #1A1033;
+    --surface-2: #241543;
+    --text: #F3E8FF;
+    --text-2: #C4B5FD;
+    --border: #2E1B54;
+    --needs: #A78BFA;
+    --wants: #F59E0B;
+    --savings: #34D399;
+    --shadow: 0 1px 3px rgba(0,0,0,.4);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,.5);
+  }
+
+  /* Theme picker */
+  .theme-swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .theme-swatch {
+    background: var(--surface); color: var(--text);
+    border: 2px solid var(--border); border-radius: 12px;
+    padding: 10px; cursor: pointer; text-align: center;
+    transition: border-color .15s, transform .05s;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .theme-swatch:active { transform: scale(.98); }
+  .theme-swatch.active { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, .15); }
+  .theme-swatch .sw-preview {
+    height: 44px; border-radius: 8px; position: relative; overflow: hidden;
+    background: var(--sw-bg);
+    border: 1px solid rgba(0,0,0,.06);
+  }
+  .theme-swatch .sw-preview::after {
+    content: ''; position: absolute; right: 6px; bottom: 6px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--sw-accent);
+    box-shadow: 0 1px 4px rgba(0,0,0,.15);
+  }
+  .theme-swatch .sw-name { font-size: 12px; font-weight: 600; }
+  @media (max-width: 380px) { .theme-swatches { grid-template-columns: 1fr 1fr; } }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body {
@@ -325,7 +417,7 @@
     <h1 id="hdrTitle">Dashboard</h1>
     <div class="sub" id="hdrSub"></div>
   </div>
-  <button class="icon-btn" id="themeBtn" title="Toggle theme">🌙</button>
+  <button class="icon-btn" id="themeBtn" title="Choose theme">🎨</button>
 </header>
 
 <main>
@@ -599,6 +691,25 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="themeModal">
+  <div class="modal">
+    <button class="close-x" id="themeModalClose" aria-label="Close">×</button>
+    <h3>Choose Theme</h3>
+    <div id="themeSwatches" class="theme-swatches"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="confirmModal">
+  <div class="modal" style="max-width: 420px;">
+    <h3 id="confirmTitle">Confirm</h3>
+    <p id="confirmMessage" style="margin: 4px 0 16px 0; color: var(--text-2); line-height: 1.4;"></p>
+    <div style="display:flex; gap:8px;">
+      <button class="secondary" id="confirmCancel" style="flex:1">Cancel</button>
+      <button class="danger" id="confirmOk" style="flex:1">Delete</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    Storage
@@ -778,19 +889,81 @@ function toast(msg) {
   setTimeout(() => t.classList.remove('show'), 1800);
 }
 
+// Reliable confirmation dialog — replaces native confirm(), which is blocked in
+// installed PWAs on iOS Safari and inconsistent elsewhere.
+function confirmDialog(message, { title = 'Confirm', okLabel = 'Delete', danger = true } = {}) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('confirmModal');
+    const titleEl = document.getElementById('confirmTitle');
+    const msgEl = document.getElementById('confirmMessage');
+    const okBtn = document.getElementById('confirmOk');
+    const cancelBtn = document.getElementById('confirmCancel');
+
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+    okBtn.textContent = okLabel;
+    okBtn.className = danger ? 'danger' : 'primary';
+    okBtn.style.flex = '1';
+
+    const cleanup = () => {
+      modal.classList.remove('show');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      modal.removeEventListener('click', onBackdrop);
+    };
+    const onOk = () => { cleanup(); resolve(true); };
+    const onCancel = () => { cleanup(); resolve(false); };
+    const onBackdrop = (e) => { if (e.target === modal) onCancel(); };
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    modal.addEventListener('click', onBackdrop);
+    modal.classList.add('show');
+  });
+}
+
 /* ============================================================
    Theme
 ============================================================ */
+const THEMES = {
+  light:    { name: 'Light',    bg: '#F8FAFC', accent: '#2563EB' },
+  dark:     { name: 'Dark',     bg: '#0B1220', accent: '#3B82F6' },
+  sepia:    { name: 'Sepia',    bg: '#F5EDD8', accent: '#B45309' },
+  ocean:    { name: 'Ocean',    bg: '#E0F2FE', accent: '#0891B2' },
+  forest:   { name: 'Forest',   bg: '#ECFDF5', accent: '#059669' },
+  rose:     { name: 'Rose',     bg: '#FDF2F8', accent: '#DB2777' },
+  midnight: { name: 'Midnight', bg: '#0F0A1F', accent: '#A78BFA' },
+};
+
 function applyTheme(theme) {
+  if (!THEMES[theme]) theme = 'light';
   document.documentElement.setAttribute('data-theme', theme);
-  document.getElementById('themeBtn').textContent = theme === 'dark' ? '☀️' : '🌙';
-  document.querySelector('meta[name="theme-color"]').setAttribute('content', theme === 'dark' ? '#0B1220' : '#2563EB');
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', THEMES[theme].bg);
 }
 applyTheme(db.settings.theme || 'light');
-document.getElementById('themeBtn').addEventListener('click', () => {
-  db.settings.theme = (db.settings.theme === 'dark') ? 'light' : 'dark';
-  applyTheme(db.settings.theme);
-  save();
+
+function openThemePicker() {
+  const container = document.getElementById('themeSwatches');
+  container.innerHTML = Object.entries(THEMES).map(([id, t]) => `
+    <button class="theme-swatch${id === (db.settings.theme || 'light') ? ' active' : ''}" data-theme="${id}" style="--sw-bg:${t.bg};--sw-accent:${t.accent}">
+      <div class="sw-preview"></div>
+      <div class="sw-name">${t.name}</div>
+    </button>
+  `).join('');
+  container.querySelectorAll('[data-theme]').forEach(b => b.addEventListener('click', () => {
+    db.settings.theme = b.dataset.theme;
+    applyTheme(db.settings.theme);
+    save();
+    container.querySelectorAll('.theme-swatch').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    setTimeout(closeThemePicker, 180);
+  }));
+  document.getElementById('themeModal').classList.add('show');
+}
+function closeThemePicker() { document.getElementById('themeModal').classList.remove('show'); }
+document.getElementById('themeBtn').addEventListener('click', openThemePicker);
+document.getElementById('themeModalClose').addEventListener('click', closeThemePicker);
+document.getElementById('themeModal').addEventListener('click', (e) => {
+  if (e.target.id === 'themeModal') closeThemePicker();
 });
 
 /* ============================================================
@@ -938,8 +1111,8 @@ function renderIncome() {
     </div>`;
   }).join('');
   el.querySelectorAll('[data-edit-inc]').forEach(b => b.addEventListener('click', () => openEditModal('income', b.dataset.editInc)));
-  el.querySelectorAll('[data-del-inc]').forEach(b => b.addEventListener('click', () => {
-    if (!confirm('Delete this income entry?')) return;
+  el.querySelectorAll('[data-del-inc]').forEach(b => b.addEventListener('click', async () => {
+    if (!await confirmDialog('Delete this income entry?', { title: 'Delete Income' })) return;
     db.income = db.income.filter(i => i.id !== b.dataset.delInc);
     save(); renderIncome(); renderDashboard();
   }));
@@ -1013,8 +1186,8 @@ function renderExpenses() {
     </div>`;
   }).join('');
   el.querySelectorAll('[data-edit-exp]').forEach(b => b.addEventListener('click', () => openEditModal(expMode, b.dataset.editExp)));
-  el.querySelectorAll('[data-del-exp]').forEach(b => b.addEventListener('click', () => {
-    if (!confirm('Delete this expense?')) return;
+  el.querySelectorAll('[data-del-exp]').forEach(b => b.addEventListener('click', async () => {
+    if (!await confirmDialog('Delete this expense entry?', { title: 'Delete Expense' })) return;
     if (expMode === 'actual') db.actual = db.actual.filter(i => i.id !== b.dataset.delExp);
     else db.planned = db.planned.filter(i => i.id !== b.dataset.delExp);
     save(); renderExpenses(); renderDashboard();
@@ -1145,11 +1318,13 @@ function renderIncomeTypeList() {
     if (e.key === 'Enter') saveEditIType(inp.dataset.editIname);
     if (e.key === 'Escape') { editingITypeId = null; renderSettings(); }
   }));
-  el.querySelectorAll('[data-del-itype]').forEach(b => b.addEventListener('click', () => {
+  el.querySelectorAll('[data-del-itype]').forEach(b => b.addEventListener('click', async () => {
     const t = db.incomeTypes.find(x => x.id === b.dataset.delItype);
     const inUse = db.income.some(x => x.typeId === t.id);
-    if (inUse && !confirm(`"${t.name}" is used by existing income entries. Delete anyway?`)) return;
-    else if (!inUse && !confirm(`Delete "${t.name}"?`)) return;
+    const msg = inUse
+      ? `"${t.name}" is used by existing income entries. Delete anyway?`
+      : `Delete "${t.name}"?`;
+    if (!await confirmDialog(msg, { title: 'Delete Income Type' })) return;
     db.incomeTypes = db.incomeTypes.filter(x => x.id !== b.dataset.delItype);
     save(); renderSettings(); renderIncome();
   }));
@@ -1276,11 +1451,13 @@ function renderCategoryList() {
     if (e.key === 'Enter') saveEditCat(inp.dataset.editName);
     if (e.key === 'Escape') { editingCatId = null; renderSettings(); }
   }));
-  el.querySelectorAll('[data-del-cat]').forEach(b => b.addEventListener('click', () => {
+  el.querySelectorAll('[data-del-cat]').forEach(b => b.addEventListener('click', async () => {
     const cat = db.categories.find(c => c.id === b.dataset.delCat);
     const inUse = db.actual.some(x => x.categoryId === cat.id) || db.planned.some(x => x.categoryId === cat.id);
-    if (inUse && !confirm(`"${cat.name}" is used by existing expenses. Delete anyway? (entries will show "Unknown".)`)) return;
-    else if (!inUse && !confirm(`Delete "${cat.name}"?`)) return;
+    const msg = inUse
+      ? `"${cat.name}" is used by existing expenses. Delete anyway? (Those entries will show "Unknown".)`
+      : `Delete "${cat.name}"?`;
+    if (!await confirmDialog(msg, { title: 'Delete Category' })) return;
     db.categories = db.categories.filter(c => c.id !== b.dataset.delCat);
     save(); renderSettings(); renderDashboard();
   }));
@@ -1301,10 +1478,11 @@ document.getElementById('btnImport').addEventListener('click', () => document.ge
 document.getElementById('importFile').addEventListener('change', (e) => {
   const f = e.target.files[0]; if (!f) return;
   const r = new FileReader();
-  r.onload = () => {
+  r.onload = async () => {
     try {
       const parsed = JSON.parse(r.result);
-      if (!confirm('Replace all current data with imported file? This cannot be undone.')) return;
+      if (!await confirmDialog('Replace all current data with imported file? This cannot be undone.',
+        { title: 'Import Data', okLabel: 'Import', danger: true })) return;
       db = { ...db, ...parsed };
       save(); applyTheme(db.settings.theme || 'light');
       renderSettings(); renderIncome(); renderExpenses(); renderDashboard();
@@ -1314,9 +1492,11 @@ document.getElementById('importFile').addEventListener('change', (e) => {
   r.readAsText(f);
   e.target.value = '';
 });
-document.getElementById('btnReset').addEventListener('click', () => {
-  if (!confirm('Delete ALL data (income, expenses, categories, salary history)?')) return;
-  if (!confirm('Really sure? This cannot be undone.')) return;
+document.getElementById('btnReset').addEventListener('click', async () => {
+  if (!await confirmDialog('Delete ALL data (income, expenses, categories, salary history)?',
+    { title: 'Reset All Data', okLabel: 'Reset' })) return;
+  if (!await confirmDialog('Really sure? This cannot be undone.',
+    { title: 'Final Confirmation', okLabel: 'Yes, Reset' })) return;
   localStorage.removeItem(KEY);
   db = load();
   renderSettings(); renderIncome(); renderExpenses(); renderDashboard();
