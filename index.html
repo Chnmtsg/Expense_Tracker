@@ -1950,11 +1950,16 @@ function openEditModal(kind, id) {
       <label>Notes</label><textarea id="mNotes">${escapeHTML(item.notes || '')}</textarea>
     `;
   } else {
-    document.getElementById('editModalTitle').textContent = 'Edit ' + (kind === 'actual' ? 'Actual' : 'Planned') + ' Expense';
+    document.getElementById('editModalTitle').textContent = 'Edit Expense';
     const catOpts = db.categories.map(c =>
       `<option value="${c.id}"${c.id === item.categoryId ? ' selected' : ''}>${escapeHTML(c.name)} (${c.group})</option>`
     ).join('');
     bodyHTML = `
+      <label>Type</label>
+      <div class="segmented" style="margin-bottom:12px" id="mKindSeg">
+        <button type="button" data-mkind="actual"${kind === 'actual' ? ' class="active"' : ''}>Actual</button>
+        <button type="button" data-mkind="planned"${kind === 'planned' ? ' class="active"' : ''}>Planned</button>
+      </div>
       <label>Date</label><input type="date" id="mDate" value="${item.date}" />
       <label>Amount (₮)</label><input type="text" id="mAmount" class="money-input" inputmode="numeric" autocomplete="off" value="${item.amount}" />
       <label>Category</label><select id="mCategory">${catOpts}</select>
@@ -1966,6 +1971,13 @@ function openEditModal(kind, id) {
   const mAmount = document.getElementById('mAmount');
   mAmount.addEventListener('input', () => formatMoneyInput(mAmount));
   formatMoneyInput(mAmount);
+  // Wire the Actual/Planned toggle (expense only)
+  document.querySelectorAll('#mKindSeg [data-mkind]').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#mKindSeg [data-mkind]').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    });
+  });
   document.getElementById('editModal').classList.add('show');
 }
 
@@ -1997,12 +2009,20 @@ document.getElementById('editModalSave').addEventListener('click', () => {
     }
     save(); renderIncome(); renderDashboard();
   } else {
-    const source = editCtx.kind === 'actual' ? db.actual : db.planned;
-    const item = source.find(x => x.id === editCtx.id);
+    const oldKind = editCtx.kind;                                       // 'actual' or 'planned'
+    const newKind = document.querySelector('#mKindSeg [data-mkind].active')?.dataset.mkind || oldKind;
+    const oldSource = oldKind === 'actual' ? db.actual : db.planned;
+    const item = oldSource.find(x => x.id === editCtx.id);
     if (item) {
       item.date = date; item.amount = amount;
       item.categoryId = document.getElementById('mCategory').value;
       item.notes = notes;
+      if (newKind !== oldKind) {
+        // Move entry to the other array
+        const idx = oldSource.indexOf(item);
+        oldSource.splice(idx, 1);
+        (newKind === 'actual' ? db.actual : db.planned).push(item);
+      }
     }
     save(); renderExpenses(); renderDashboard();
   }
