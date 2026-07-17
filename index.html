@@ -148,6 +148,16 @@
   .cat-edit { flex: 1; display: flex; gap: 6px; align-items: center; }
   .cat-edit input { padding: 6px 8px; font-size: 14px; flex: 1; min-width: 0; }
   .cat-edit select { padding: 6px 8px; font-size: 14px; width: auto; min-width: 90px; }
+
+  .list-item.draggable-row { touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
+  .list-item.draggable-row:active { cursor: grabbing; }
+  .list-item.dragging {
+    position: relative; z-index: 10;
+    box-shadow: 0 12px 28px rgba(0,0,0,.25);
+    opacity: .95; transform-origin: center;
+    background: var(--surface);
+  }
+  .drag-hint { font-size: 11px; color: var(--text-2); margin-bottom: 8px; }
   .empty { text-align: center; padding: 24px; color: var(--text-2); font-size: 14px; }
 
   .tag {
@@ -392,10 +402,8 @@
     <label>Date</label><input type="date" id="incDate" />
     <label>Amount (₮)</label><input type="text" id="incAmount" class="money-input" inputmode="numeric" autocomplete="off" placeholder="0" />
     <label>Type</label>
-    <select id="incType">
-      <option>Salary</option>
-      <option>Other Income</option>
-    </select>
+    <select id="incType"></select>
+    <div class="helper">Manage types in Settings.</div>
     <label>Notes</label><textarea id="incNotes" placeholder="Optional..."></textarea>
     <button class="primary" id="incAdd">➕ Add Income</button>
   </div>
@@ -453,6 +461,14 @@
   </div>
 
   <div class="card">
+    <h3>Income Types</h3>
+    <div id="incomeTypeList"></div>
+    <label>New Income Type Name</label>
+    <input type="text" id="newIncomeTypeName" placeholder="e.g. Bonus" />
+    <button class="primary" id="incomeTypeAdd">➕ Add Income Type</button>
+  </div>
+
+  <div class="card">
     <h3>Data</h3>
     <div class="row-actions" style="flex-wrap:wrap; gap:8px;">
       <button class="secondary" id="btnExport">⬇ Export JSON</button>
@@ -484,6 +500,18 @@
 
 <div class="toast" id="toast"></div>
 
+<div class="modal-backdrop" id="editModal">
+  <div class="modal">
+    <button class="close-x" id="editModalClose" aria-label="Close">×</button>
+    <h3 id="editModalTitle">Edit</h3>
+    <div id="editModalBody"></div>
+    <div style="display:flex; gap:8px; margin-top:16px;">
+      <button class="secondary" id="editModalCancel" style="flex:1">Cancel</button>
+      <button class="primary" id="editModalSave" style="flex:1; margin-top:0">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    Storage
@@ -500,26 +528,46 @@ const defaultCategories = [
   { id: uid(), name: 'Emergency Fund', group: 'Savings' },
   { id: uid(), name: 'Investments',  group: 'Savings' },
 ];
+const defaultIncomeTypes = [
+  { id: uid(), name: 'Salary' },
+  { id: uid(), name: 'Other Income' },
+  { id: uid(), name: 'Bonus' },
+  { id: uid(), name: 'Freelance' },
+  { id: uid(), name: 'Investment' },
+  { id: uid(), name: 'Gift' },
+];
 let db = load();
 
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
 
 function load() {
+  let d;
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      return {
+      d = {
         income: parsed.income || [],
         planned: parsed.planned || [],
         actual: parsed.actual || [],
         categories: parsed.categories?.length ? parsed.categories : defaultCategories,
+        incomeTypes: parsed.incomeTypes?.length ? parsed.incomeTypes : defaultIncomeTypes.map(t => ({ ...t, id: uid() })),
         salaries: parsed.salaries || [],
         settings: { theme: 'light', ...(parsed.settings || {}) }
       };
     }
   } catch (e) {}
-  return { income: [], planned: [], actual: [], categories: [...defaultCategories], salaries: [], settings: { theme: 'light' } };
+  if (!d) d = { income: [], planned: [], actual: [], categories: [...defaultCategories], incomeTypes: [...defaultIncomeTypes], salaries: [], settings: { theme: 'light' } };
+
+  // Migrate old income entries that stored a `type` string → typeId
+  d.income.forEach(item => {
+    if (item.typeId || !item.type) return;
+    let t = d.incomeTypes.find(t => t.name === item.type);
+    if (!t) { t = { id: uid(), name: item.type }; d.incomeTypes.push(t); }
+    item.typeId = t.id;
+    delete item.type;
+  });
+  return d;
 }
 function save() { localStorage.setItem(KEY, JSON.stringify(db)); }
 
@@ -731,7 +779,12 @@ document.getElementById('sSave').addEventListener('click', () => {
     ...r
   };
   db.salaries.push(record);
-  db.income.push({ id: uid(), date, amount: r.net, type: 'Salary', notes: `Net salary (Gross ${fmt(r.gross)}, SI ${fmt(r.si)}, WHT ${fmt(r.wht)})` });
+  let salaryType = db.incomeTypes.find(t => t.name === 'Salary');
+  if (!salaryType) {
+    salaryType = { id: uid(), name: 'Salary' };
+    db.incomeTypes.push(salaryType);
+  }
+  db.income.push({ id: uid(), date, amount: r.net, typeId: salaryType.id, notes: `Net salary (Gross ${fmt(r.gross)}, SI ${fmt(r.si)}, WHT ${fmt(r.wht)})` });
   save();
   renderDashboard();
   toast('Saved and added to Income');
@@ -744,9 +797,10 @@ document.getElementById('incAdd').addEventListener('click', () => {
   const date = document.getElementById('incDate').value || todayISO();
   const amount = unmoney(document.getElementById('incAmount').value);
   if (amount <= 0) { toast('Enter an amount'); return; }
+  const typeId = document.getElementById('incType').value;
+  if (!typeId) { toast('Add an income type first'); return; }
   db.income.push({
-    id: uid(), date, amount,
-    type: document.getElementById('incType').value,
+    id: uid(), date, amount, typeId,
     notes: document.getElementById('incNotes').value.trim()
   });
   save();
@@ -758,6 +812,8 @@ document.getElementById('incAdd').addEventListener('click', () => {
 });
 
 function renderIncome() {
+  // Refresh the Type dropdown in case types changed in Settings
+  document.getElementById('incType').innerHTML = incomeTypeOptions();
   const { from, to } = getRange('inc');
   const list = db.income
     .filter(x => inRange(x.date, from, to))
@@ -765,19 +821,25 @@ function renderIncome() {
   document.getElementById('incCount').textContent = list.length;
   const el = document.getElementById('incList');
   if (!list.length) { el.innerHTML = '<div class="empty">No income entries in this period.</div>'; return; }
-  el.innerHTML = list.map(x => `
+  el.innerHTML = list.map(x => {
+    const t = db.incomeTypes.find(t => t.id === x.typeId);
+    const typeName = t ? t.name : (x.type || 'Income');
+    return `
     <div class="list-item">
       <div>
-        <div><b>${x.type || 'Income'}</b></div>
+        <div><b>${escapeHTML(typeName)}</b></div>
         <div class="meta">${x.date}${x.notes ? ' · <span class="note">' + escapeHTML(x.notes) + '</span>' : ''}</div>
       </div>
       <div style="display:flex;align-items:center">
         <div class="amount pos">${fmt(x.amount)}</div>
         <div class="actions">
+          <button title="Edit"   data-edit-inc="${x.id}">✎</button>
           <button title="Delete" data-del-inc="${x.id}">✕</button>
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+  el.querySelectorAll('[data-edit-inc]').forEach(b => b.addEventListener('click', () => openEditModal('income', b.dataset.editInc)));
   el.querySelectorAll('[data-del-inc]').forEach(b => b.addEventListener('click', () => {
     if (!confirm('Delete this income entry?')) return;
     db.income = db.income.filter(i => i.id !== b.dataset.delInc);
@@ -801,6 +863,11 @@ document.querySelectorAll('.segmented button[data-exp]').forEach(b => {
 
 function categoryOptions() {
   return db.categories.map(c => `<option value="${c.id}">${escapeHTML(c.name)} (${c.group})</option>`).join('');
+}
+function incomeTypeOptions(selectedId) {
+  return db.incomeTypes.map(t =>
+    `<option value="${t.id}"${t.id === selectedId ? ' selected' : ''}>${escapeHTML(t.name)}</option>`
+  ).join('');
 }
 
 document.getElementById('expAdd').addEventListener('click', () => {
@@ -841,11 +908,13 @@ function renderExpenses() {
       <div style="display:flex;align-items:center">
         <div class="amount neg">${fmt(x.amount)}</div>
         <div class="actions">
+          <button title="Edit"   data-edit-exp="${x.id}">✎</button>
           <button title="Delete" data-del-exp="${x.id}">✕</button>
         </div>
       </div>
     </div>`;
   }).join('');
+  el.querySelectorAll('[data-edit-exp]').forEach(b => b.addEventListener('click', () => openEditModal(expMode, b.dataset.editExp)));
   el.querySelectorAll('[data-del-exp]').forEach(b => b.addEventListener('click', () => {
     if (!confirm('Delete this expense?')) return;
     if (expMode === 'actual') db.actual = db.actual.filter(i => i.id !== b.dataset.delExp);
@@ -868,14 +937,126 @@ document.getElementById('catAdd').addEventListener('click', () => {
   toast('Category added');
 });
 
-let editingCatId = null;
+document.getElementById('incomeTypeAdd').addEventListener('click', () => {
+  const name = document.getElementById('newIncomeTypeName').value.trim();
+  if (!name) { toast('Enter a name'); return; }
+  if (db.incomeTypes.some(t => t.name.toLowerCase() === name.toLowerCase())) {
+    toast('Type already exists'); return;
+  }
+  db.incomeTypes.push({ id: uid(), name });
+  save();
+  document.getElementById('newIncomeTypeName').value = '';
+  renderSettings();
+  toast('Income type added');
+});
 
-function moveCat(id, dir) {
-  const i = db.categories.findIndex(c => c.id === id);
-  const j = i + dir;
-  if (i < 0 || j < 0 || j >= db.categories.length) return;
-  [db.categories[i], db.categories[j]] = [db.categories[j], db.categories[i]];
-  save(); renderSettings();
+let editingCatId = null;
+let editingITypeId = null;
+
+function saveEditIType(id) {
+  const nameEl = document.querySelector(`input[data-edit-iname="${id}"]`);
+  if (!nameEl) return;
+  const name = nameEl.value.trim();
+  if (!name) { toast('Name cannot be empty'); return; }
+  const t = db.incomeTypes.find(x => x.id === id);
+  if (t) t.name = name;
+  editingITypeId = null;
+  save(); renderSettings(); renderIncome();
+  toast('Income type updated');
+}
+
+function initIncomeTypeReorder() {
+  const container = document.getElementById('incomeTypeList');
+  const rows = Array.from(container.querySelectorAll('.list-item.draggable-row'));
+  if (rows.length < 2) return;
+  rows.forEach((row, idx) => {
+    let startY = 0, startIdx = idx, itemHeight = 0, activated = false, currentPointer = null;
+    row.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('button, input, select, textarea')) return;
+      startY = e.clientY; startIdx = idx;
+      const rect = row.getBoundingClientRect();
+      const nextRow = rows[idx + 1];
+      itemHeight = nextRow ? (nextRow.getBoundingClientRect().top - rect.top) : (rect.height + 8);
+      activated = false; currentPointer = e.pointerId;
+    });
+    row.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== currentPointer) return;
+      const dy = e.clientY - startY;
+      if (!activated) {
+        if (Math.abs(dy) < 5) return;
+        activated = true; row.classList.add('dragging');
+        try { row.setPointerCapture(e.pointerId); } catch (_) {}
+      }
+      e.preventDefault();
+      row.style.transform = `translateY(${dy}px)`;
+    });
+    const finish = (e) => {
+      if (e.pointerId !== currentPointer) return;
+      currentPointer = null;
+      if (!activated) return;
+      const dy = e.clientY - startY;
+      row.classList.remove('dragging'); row.style.transform = '';
+      const slots = Math.round(dy / itemHeight);
+      const newIdx = Math.max(0, Math.min(db.incomeTypes.length - 1, startIdx + slots));
+      if (newIdx !== startIdx) {
+        const [item] = db.incomeTypes.splice(startIdx, 1);
+        db.incomeTypes.splice(newIdx, 0, item);
+        save(); renderSettings();
+      }
+      activated = false;
+    };
+    row.addEventListener('pointerup', finish);
+    row.addEventListener('pointercancel', finish);
+  });
+}
+
+function renderIncomeTypeList() {
+  const el = document.getElementById('incomeTypeList');
+  if (!db.incomeTypes.length) { el.innerHTML = '<div class="empty">No income types.</div>'; return; }
+  const rowsHTML = db.incomeTypes.map((t) => {
+    if (t.id === editingITypeId) {
+      return `
+        <div class="list-item">
+          <div class="cat-edit">
+            <input type="text" data-edit-iname="${t.id}" value="${escapeHTML(t.name)}" autocomplete="off" />
+          </div>
+          <div class="actions">
+            <button title="Save"   data-save-itype="${t.id}"   style="color:var(--success);font-size:18px">✓</button>
+            <button title="Cancel" data-cancel-itype="${t.id}" style="font-size:18px">✕</button>
+          </div>
+        </div>`;
+    }
+    return `
+      <div class="list-item draggable-row">
+        <div><b>${escapeHTML(t.name)}</b></div>
+        <div class="actions">
+          <button title="Edit"   data-edit-itype="${t.id}">✎</button>
+          <button title="Delete" data-del-itype="${t.id}">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+  el.innerHTML = `<div class="drag-hint">Press and drag a row to reorder</div>${rowsHTML}`;
+
+  el.querySelectorAll('[data-edit-itype]').forEach(b => b.addEventListener('click', () => {
+    editingITypeId = b.dataset.editItype; renderSettings();
+    setTimeout(() => document.querySelector(`input[data-edit-iname="${editingITypeId}"]`)?.focus(), 0);
+  }));
+  el.querySelectorAll('[data-cancel-itype]').forEach(b => b.addEventListener('click', () => { editingITypeId = null; renderSettings(); }));
+  el.querySelectorAll('[data-save-itype]').forEach(b   => b.addEventListener('click', () => saveEditIType(b.dataset.saveItype)));
+  el.querySelectorAll('input[data-edit-iname]').forEach(inp => inp.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') saveEditIType(inp.dataset.editIname);
+    if (e.key === 'Escape') { editingITypeId = null; renderSettings(); }
+  }));
+  el.querySelectorAll('[data-del-itype]').forEach(b => b.addEventListener('click', () => {
+    const t = db.incomeTypes.find(x => x.id === b.dataset.delItype);
+    const inUse = db.income.some(x => x.typeId === t.id);
+    if (inUse && !confirm(`"${t.name}" is used by existing income entries. Delete anyway?`)) return;
+    else if (!inUse && !confirm(`Delete "${t.name}"?`)) return;
+    db.incomeTypes = db.incomeTypes.filter(x => x.id !== b.dataset.delItype);
+    save(); renderSettings(); renderIncome();
+  }));
+
+  initIncomeTypeReorder();
 }
 
 function saveEditCat(id) {
@@ -891,16 +1072,75 @@ function saveEditCat(id) {
   toast('Category updated');
 }
 
+// Drag-to-reorder — press on a row and drag up/down.
+// Threshold prevents accidental drag on plain taps.
+function initCategoryReorder() {
+  const container = document.getElementById('catList');
+  const rows = Array.from(container.querySelectorAll('.list-item.draggable-row'));
+  if (rows.length < 2) return;
+
+  rows.forEach((row, idx) => {
+    let startY = 0, startIdx = idx, itemHeight = 0, activated = false, currentPointer = null;
+
+    row.addEventListener('pointerdown', (e) => {
+      // Don't drag if user pressed on a button/input inside the row
+      if (e.target.closest('button, input, select, textarea')) return;
+      startY = e.clientY;
+      startIdx = idx;
+      const rect = row.getBoundingClientRect();
+      const nextRow = rows[idx + 1];
+      itemHeight = nextRow ? (nextRow.getBoundingClientRect().top - rect.top) : (rect.height + 8);
+      activated = false;
+      currentPointer = e.pointerId;
+    });
+
+    row.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== currentPointer) return;
+      const dy = e.clientY - startY;
+      if (!activated) {
+        if (Math.abs(dy) < 5) return;
+        activated = true;
+        row.classList.add('dragging');
+        try { row.setPointerCapture(e.pointerId); } catch (_) {}
+      }
+      e.preventDefault();
+      row.style.transform = `translateY(${dy}px)`;
+    });
+
+    const finish = (e) => {
+      if (e.pointerId !== currentPointer) return;
+      currentPointer = null;
+      if (!activated) return;
+      const dy = e.clientY - startY;
+      row.classList.remove('dragging');
+      row.style.transform = '';
+      const slots = Math.round(dy / itemHeight);
+      const newIdx = Math.max(0, Math.min(db.categories.length - 1, startIdx + slots));
+      if (newIdx !== startIdx) {
+        const [item] = db.categories.splice(startIdx, 1);
+        db.categories.splice(newIdx, 0, item);
+        save();
+        renderSettings();
+      }
+      activated = false;
+    };
+    row.addEventListener('pointerup', finish);
+    row.addEventListener('pointercancel', finish);
+  });
+}
+
 function renderSettings() {
+  renderCategoryList();
+  renderIncomeTypeList();
+}
+
+function renderCategoryList() {
   const el = document.getElementById('catList');
   if (!db.categories.length) { el.innerHTML = '<div class="empty">No categories.</div>'; return; }
   const groupOpts = (sel) => ['Needs', 'Wants', 'Savings']
     .map(g => `<option value="${g}"${g === sel ? ' selected' : ''}>${g}</option>`).join('');
 
-  el.innerHTML = db.categories.map((c, i) => {
-    const isFirst = i === 0;
-    const isLast  = i === db.categories.length - 1;
-
+  const rowsHTML = db.categories.map((c) => {
     if (c.id === editingCatId) {
       return `
         <div class="list-item">
@@ -915,21 +1155,19 @@ function renderSettings() {
         </div>`;
     }
     return `
-      <div class="list-item">
+      <div class="list-item draggable-row">
         <div>
           <div><b>${escapeHTML(c.name)}</b><span class="tag ${c.group.toLowerCase()}">${c.group}</span></div>
         </div>
         <div class="actions">
-          <button title="Move up"   data-up-cat="${c.id}"   ${isFirst ? 'disabled' : ''}>↑</button>
-          <button title="Move down" data-down-cat="${c.id}" ${isLast  ? 'disabled' : ''}>↓</button>
-          <button title="Edit"      data-edit-cat="${c.id}">✎</button>
-          <button title="Delete"    data-del-cat="${c.id}">✕</button>
+          <button title="Edit"   data-edit-cat="${c.id}">✎</button>
+          <button title="Delete" data-del-cat="${c.id}">✕</button>
         </div>
       </div>`;
   }).join('');
 
-  el.querySelectorAll('[data-up-cat]').forEach(b   => b.addEventListener('click', () => moveCat(b.dataset.upCat,   -1)));
-  el.querySelectorAll('[data-down-cat]').forEach(b => b.addEventListener('click', () => moveCat(b.dataset.downCat,  1)));
+  el.innerHTML = `<div class="drag-hint">Press and drag a row up or down to reorder</div>${rowsHTML}`;
+
   el.querySelectorAll('[data-edit-cat]').forEach(b => b.addEventListener('click', () => {
     editingCatId = b.dataset.editCat; renderSettings();
     setTimeout(() => document.querySelector(`input[data-edit-name="${editingCatId}"]`)?.focus(), 0);
@@ -948,6 +1186,8 @@ function renderSettings() {
     db.categories = db.categories.filter(c => c.id !== b.dataset.delCat);
     save(); renderSettings(); renderDashboard();
   }));
+
+  initCategoryReorder();
 }
 
 document.getElementById('btnExport').addEventListener('click', () => {
@@ -1201,6 +1441,88 @@ function drawMonthlyTrend(from, to) {
       <div class="barchart">${barsHTML}</div>
     </div>`;
 }
+
+/* ============================================================
+   Edit modal (Income / Expense)
+============================================================ */
+let editCtx = null; // { kind: 'income' | 'actual' | 'planned', id }
+
+function openEditModal(kind, id) {
+  const source = kind === 'income' ? db.income : (kind === 'actual' ? db.actual : db.planned);
+  const item = source.find(x => x.id === id);
+  if (!item) return;
+  editCtx = { kind, id };
+
+  let bodyHTML = '';
+  if (kind === 'income') {
+    document.getElementById('editModalTitle').textContent = 'Edit Income';
+    bodyHTML = `
+      <label>Date</label><input type="date" id="mDate" value="${item.date}" />
+      <label>Amount (₮)</label><input type="text" id="mAmount" class="money-input" inputmode="numeric" autocomplete="off" value="${item.amount}" />
+      <label>Type</label>
+      <select id="mType">${incomeTypeOptions(item.typeId)}</select>
+      <label>Notes</label><textarea id="mNotes">${escapeHTML(item.notes || '')}</textarea>
+    `;
+  } else {
+    document.getElementById('editModalTitle').textContent = 'Edit ' + (kind === 'actual' ? 'Actual' : 'Planned') + ' Expense';
+    const catOpts = db.categories.map(c =>
+      `<option value="${c.id}"${c.id === item.categoryId ? ' selected' : ''}>${escapeHTML(c.name)} (${c.group})</option>`
+    ).join('');
+    bodyHTML = `
+      <label>Date</label><input type="date" id="mDate" value="${item.date}" />
+      <label>Amount (₮)</label><input type="text" id="mAmount" class="money-input" inputmode="numeric" autocomplete="off" value="${item.amount}" />
+      <label>Category</label><select id="mCategory">${catOpts}</select>
+      <label>Notes</label><textarea id="mNotes">${escapeHTML(item.notes || '')}</textarea>
+    `;
+  }
+  document.getElementById('editModalBody').innerHTML = bodyHTML;
+  // Wire the money input formatter after the DOM is in place
+  const mAmount = document.getElementById('mAmount');
+  mAmount.addEventListener('input', () => formatMoneyInput(mAmount));
+  formatMoneyInput(mAmount);
+  document.getElementById('editModal').classList.add('show');
+}
+
+function closeEditModal() {
+  editCtx = null;
+  document.getElementById('editModal').classList.remove('show');
+}
+
+document.getElementById('editModalClose').addEventListener('click', closeEditModal);
+document.getElementById('editModalCancel').addEventListener('click', closeEditModal);
+document.getElementById('editModal').addEventListener('click', (e) => {
+  if (e.target.id === 'editModal') closeEditModal();
+});
+
+document.getElementById('editModalSave').addEventListener('click', () => {
+  if (!editCtx) return;
+  const date = document.getElementById('mDate').value || todayISO();
+  const amount = unmoney(document.getElementById('mAmount').value);
+  if (amount <= 0) { toast('Enter a valid amount'); return; }
+  const notes = document.getElementById('mNotes').value.trim();
+
+  if (editCtx.kind === 'income') {
+    const item = db.income.find(x => x.id === editCtx.id);
+    if (item) {
+      item.date = date; item.amount = amount;
+      item.typeId = document.getElementById('mType').value;
+      delete item.type;
+      item.notes = notes;
+    }
+    save(); renderIncome(); renderDashboard();
+  } else {
+    const source = editCtx.kind === 'actual' ? db.actual : db.planned;
+    const item = source.find(x => x.id === editCtx.id);
+    if (item) {
+      item.date = date; item.amount = amount;
+      item.categoryId = document.getElementById('mCategory').value;
+      item.notes = notes;
+    }
+    save(); renderExpenses(); renderDashboard();
+  }
+  closeEditModal();
+  toast('Updated');
+});
 
 /* ============================================================
    Helpers
