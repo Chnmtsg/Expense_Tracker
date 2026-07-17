@@ -132,6 +132,7 @@
     background: var(--surface-2);
   }
   .list-item .meta { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+  .list-item .meta .note { font-weight: 700; color: var(--text); }
   .list-item .amount { font-weight: 700; font-size: 15px; }
   .list-item .amount.pos { color: var(--success); }
   .list-item .amount.neg { color: var(--danger); }
@@ -179,8 +180,16 @@
   }
   .segmented button.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
 
-  .filter-row { display: flex; gap: 8px; margin-bottom: 12px; }
-  .filter-row select, .filter-row input { flex: 1; }
+  .filter-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .filter-row > * { flex: 1 1 130px; min-width: 130px; }
+
+  .pva-row { margin-bottom: 14px; }
+  .pva-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; }
+  .pva-head .cat { font-weight: 500; display: flex; align-items: center; gap: 6px; }
+  .pva-bar-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+  .pva-bar-row .pva-lbl { font-size: 10px; color: var(--text-2); width: 44px; }
+  .pva-bar-row .pva-amt { font-size: 11px; font-weight: 600; width: 80px; text-align: right; }
+  .pva-bar-row .bar { flex: 1; margin-top: 0; }
 
   .breakdown-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
   .breakdown-item .name { flex: 1; font-size: 13px; }
@@ -194,11 +203,28 @@
   .legend .row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
   .legend .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 
-  .barchart { display: flex; align-items: flex-end; gap: 6px; height: 140px; padding: 8px 0; }
-  .barchart .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
-  .barchart .col .bars { display: flex; align-items: flex-end; gap: 3px; height: 100%; width: 100%; justify-content: center; }
-  .barchart .col .bars > span { width: 10px; border-radius: 3px 3px 0 0; min-height: 2px; }
-  .barchart .col .lbl { font-size: 10px; color: var(--text-2); }
+  .trend-wrap { display: flex; align-items: flex-start; gap: 4px; overflow-x: auto; padding: 8px 0 4px 0; }
+  .y-axis {
+    display: flex; flex-direction: column; justify-content: space-between;
+    height: 110px;
+    padding-right: 4px;
+    min-width: 46px;
+    font-size: 9px; color: var(--text-2); text-align: right; line-height: 1;
+    flex-shrink: 0;
+  }
+  .barchart { display: flex; align-items: flex-end; gap: 6px; flex: 1; min-width: 0;
+    background:
+      linear-gradient(to right, var(--border), var(--border)) no-repeat 0 0 / 1px 110px,
+      linear-gradient(to right, var(--border), var(--border)) no-repeat 0 55px / 100% 1px,
+      linear-gradient(to right, var(--border), var(--border)) no-repeat 0 110px / 100% 1px;
+  }
+  .barchart .col { flex: 1 0 44px; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; }
+  .barchart .col .bars { display: flex; align-items: flex-end; gap: 3px; height: 110px; width: 100%; justify-content: center; }
+  .barchart .col .bars > span { width: 12px; border-radius: 3px 3px 0 0; min-height: 2px; }
+  .barchart .col .lbl { font-size: 10px; color: var(--text-2); font-weight: 600; margin-top: 2px; }
+  .barchart .col .val-inc { font-size: 9px; line-height: 1.2; color: var(--success); font-weight: 700; }
+  .barchart .col .val-exp { font-size: 9px; line-height: 1.2; color: var(--danger); font-weight: 600; }
+  .barchart .col .val-zero { font-size: 9px; color: var(--text-2); opacity: .5; }
 
   .salary-summary { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: white; }
   .salary-summary .label { color: rgba(255,255,255,.85); }
@@ -243,8 +269,9 @@
 <!-- ============ DASHBOARD ============ -->
 <section class="screen active" id="dashboard">
   <div class="filter-row">
-    <select id="dashMonth"></select>
-    <select id="dashYear"></select>
+    <select id="dashPreset"></select>
+    <input type="date" id="dashFrom" aria-label="From date" />
+    <input type="date" id="dashTo" aria-label="To date" />
   </div>
 
   <div class="grid-3">
@@ -267,13 +294,8 @@
   </div>
 
   <div class="card">
-    <h3>Expense by Category</h3>
-    <div id="catBreakdown"></div>
-  </div>
-
-  <div class="card">
-    <h3>Monthly Trend (last 6 months)</h3>
-    <div class="barchart" id="monthlyChart"></div>
+    <h3>Monthly Trend <span id="trendRangeLbl" style="font-weight:400;color:var(--text-2);font-size:12px"></span></h3>
+    <div id="monthlyChart"></div>
     <div class="row-inline" style="justify-content: center; gap: 16px; margin-top: 8px;">
       <span class="row-inline" style="font-size:12px;color:var(--text-2)"><span class="dot" style="width:10px;height:10px;border-radius:2px;background:var(--success);display:inline-block;margin-right:4px"></span> Income</span>
       <span class="row-inline" style="font-size:12px;color:var(--text-2)"><span class="dot" style="width:10px;height:10px;border-radius:2px;background:var(--danger);display:inline-block;margin-right:4px"></span> Expenses</span>
@@ -300,7 +322,7 @@
     <div class="grid-2">
       <div>
         <label>Hourly Rate (₮)</label>
-        <input type="number" id="sHourly" min="0" step="100" />
+        <input type="text" id="sHourly" class="money-input" inputmode="numeric" autocomplete="off" placeholder="0" />
       </div>
       <div>
         <label>Normal Hours</label>
@@ -320,7 +342,7 @@
       </div>
       <div>
         <label>Field Allowance / day (₮)</label>
-        <input type="number" id="sFieldAllow" min="0" step="100" value="50000" />
+        <input type="text" id="sFieldAllow" class="money-input" inputmode="numeric" autocomplete="off" value="50000" />
       </div>
       <div>
         <label>Field Days</label>
@@ -355,14 +377,15 @@
 <!-- ============ INCOME ============ -->
 <section class="screen" id="income">
   <div class="filter-row">
-    <select id="incMonth"></select>
-    <select id="incYear"></select>
+    <select id="incPreset"></select>
+    <input type="date" id="incFrom" aria-label="From date" />
+    <input type="date" id="incTo" aria-label="To date" />
   </div>
 
   <div class="card">
     <h3>Add Income</h3>
     <label>Date</label><input type="date" id="incDate" />
-    <label>Amount (₮)</label><input type="number" id="incAmount" min="0" step="100" />
+    <label>Amount (₮)</label><input type="text" id="incAmount" class="money-input" inputmode="numeric" autocomplete="off" placeholder="0" />
     <label>Type</label>
     <select id="incType">
       <option>Salary</option>
@@ -386,14 +409,15 @@
   </div>
 
   <div class="filter-row">
-    <select id="expMonth"></select>
-    <select id="expYear"></select>
+    <select id="expPreset"></select>
+    <input type="date" id="expFrom" aria-label="From date" />
+    <input type="date" id="expTo" aria-label="To date" />
   </div>
 
   <div class="card">
     <h3 id="expFormTitle">Add Actual Expense</h3>
     <label>Date</label><input type="date" id="expDate" />
-    <label>Amount (₮)</label><input type="number" id="expAmount" min="0" step="100" />
+    <label>Amount (₮)</label><input type="text" id="expAmount" class="money-input" inputmode="numeric" autocomplete="off" placeholder="0" />
     <label>Category</label>
     <select id="expCategory"></select>
     <div class="helper">Manage categories in Settings.</div>
@@ -498,16 +522,113 @@ function save() { localStorage.setItem(KEY, JSON.stringify(db)); }
    Utils
 ============================================================ */
 const fmt = (n) => '₮' + Math.round(n || 0).toLocaleString('en-US');
+// Compact currency for cramped labels: 1,250,000 → ₮1.3M
+const fmtCompact = (n) => {
+  const v = Math.round(+n || 0);
+  if (v >= 1_000_000) return '₮' + (v / 1_000_000).toFixed(v >= 10_000_000 ? 0 : 1).replace(/\.0$/, '') + 'M';
+  if (v >= 1_000)     return '₮' + (v / 1_000).toFixed(v >= 10_000 ? 0 : 1).replace(/\.0$/, '') + 'K';
+  return '₮' + v;
+};
+// Round a raw max up to a "nice" chart-axis number
+const niceCeil = (n) => {
+  if (!(n > 0)) return 1;
+  const exp = Math.pow(10, Math.floor(Math.log10(n)));
+  const norm = n / exp;
+  const step = [1, 2, 2.5, 5, 10].find(s => norm <= s);
+  return step * exp;
+};
 const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const todayISO = () => new Date().toISOString().slice(0, 10);
+// Format a Date as YYYY-MM-DD using LOCAL components — never toISOString(),
+// which returns UTC and shifts dates for users east of UTC.
+const toLocalISO = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const todayISO = () => toLocalISO(new Date());
 const parseISO = (s) => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
 
-function inPeriod(dateStr, month, year) {
+// Parse a "50,000" money input back to an integer
+const unmoney = (v) => +String(v ?? '').replace(/[^\d]/g, '') || 0;
+// Parse any numeric input (keeps decimals), stripping thousand-separators
+const unnum   = (v) => +String(v ?? '').replace(/,/g, '') || 0;
+
+// Live-format .money-input fields with thousand separators
+function formatMoneyInput(input) {
+  const oldVal = input.value;
+  const oldPos = input.selectionStart ?? oldVal.length;
+  const digitsBefore = oldVal.slice(0, oldPos).replace(/\D/g, '').length;
+  const digits = oldVal.replace(/\D/g, '');
+  const newVal = digits ? Number(digits).toLocaleString('en-US') : '';
+  if (newVal === oldVal) return;
+  input.value = newVal;
+  // Re-place caret so it stays after the same number of digits
+  let pos = 0, seen = 0;
+  while (pos < newVal.length && seen < digitsBefore) {
+    if (/\d/.test(newVal[pos])) seen++;
+    pos++;
+  }
+  try { input.setSelectionRange(pos, pos); } catch (e) {}
+}
+function initMoneyInputs() {
+  document.querySelectorAll('.money-input').forEach(inp => {
+    inp.addEventListener('input', () => formatMoneyInput(inp));
+    formatMoneyInput(inp); // format any pre-filled default
+  });
+}
+
+function inRange(dateStr, from, to) {
   if (!dateStr) return false;
-  const d = parseISO(dateStr);
-  if (year !== 'all' && d.getFullYear() !== +year) return false;
-  if (month !== 'all' && d.getMonth() !== +month) return false;
+  if (from && dateStr < from) return false;
+  if (to && dateStr > to) return false;
   return true;
+}
+
+const PRESETS = [
+  { id: 'thisMonth',  label: 'This Month' },
+  { id: 'lastMonth',  label: 'Last Month' },
+  { id: 'last30',     label: 'Last 30 Days' },
+  { id: 'last90',     label: 'Last 90 Days' },
+  { id: 'thisYear',   label: 'This Year' },
+  { id: 'lastYear',   label: 'Last Year' },
+  { id: 'all',        label: 'All Time' },
+  { id: 'custom',     label: 'Custom' },
+];
+const isoDate = toLocalISO;
+function computeRange(preset) {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  switch (preset) {
+    case 'thisMonth': return { from: isoDate(new Date(y, m, 1)),   to: isoDate(new Date(y, m + 1, 0)) };
+    case 'lastMonth': return { from: isoDate(new Date(y, m - 1, 1)), to: isoDate(new Date(y, m, 0)) };
+    case 'last30':    { const f = new Date(now); f.setDate(f.getDate() - 29); return { from: isoDate(f), to: isoDate(now) }; }
+    case 'last90':    { const f = new Date(now); f.setDate(f.getDate() - 89); return { from: isoDate(f), to: isoDate(now) }; }
+    case 'thisYear':  return { from: isoDate(new Date(y, 0, 1)),   to: isoDate(new Date(y, 11, 31)) };
+    case 'lastYear':  return { from: isoDate(new Date(y - 1, 0, 1)), to: isoDate(new Date(y - 1, 11, 31)) };
+    case 'all':       return { from: '', to: '' };
+    default:          return null;
+  }
+}
+function getRange(prefix) {
+  return {
+    from: document.getElementById(prefix + 'From').value,
+    to:   document.getElementById(prefix + 'To').value
+  };
+}
+function initPeriodFilter(prefix, onChange) {
+  const presetEl = document.getElementById(prefix + 'Preset');
+  const fromEl   = document.getElementById(prefix + 'From');
+  const toEl     = document.getElementById(prefix + 'To');
+  presetEl.innerHTML = PRESETS.map(p => `<option value="${p.id}">${p.label}</option>`).join('');
+  const applyPreset = (id) => {
+    const r = computeRange(id);
+    if (r) { fromEl.value = r.from; toEl.value = r.to; }
+  };
+  presetEl.value = 'thisMonth';
+  applyPreset('thisMonth');
+  presetEl.addEventListener('change', () => {
+    if (presetEl.value !== 'custom') applyPreset(presetEl.value);
+    onChange();
+  });
+  const onDate = () => { presetEl.value = 'custom'; onChange(); };
+  fromEl.addEventListener('change', onDate);
+  toEl.addEventListener('change', onDate);
 }
 
 function toast(msg) {
@@ -557,34 +678,11 @@ function navigate(name) {
 }
 
 /* ============================================================
-   Period filters
-============================================================ */
-function populatePeriodSelects() {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const monthOpts = ['<option value="all">All months</option>']
-    .concat(monthNames.map((m,i) => `<option value="${i}">${m}</option>`)).join('');
-  const yearOpts = ['<option value="all">All years</option>']
-    .concat([currentYear-2, currentYear-1, currentYear, currentYear+1].map(y => `<option value="${y}">${y}</option>`)).join('');
-
-  ['dashMonth','incMonth','expMonth'].forEach(id => {
-    const el = document.getElementById(id);
-    el.innerHTML = monthOpts;
-    el.value = now.getMonth();
-  });
-  ['dashYear','incYear','expYear'].forEach(id => {
-    const el = document.getElementById(id);
-    el.innerHTML = yearOpts;
-    el.value = currentYear;
-  });
-}
-
-/* ============================================================
    Salary
 ============================================================ */
 const sIds = ['sHourly','sNormal','sOT','sNT','sOTNT','sFieldAllow','sFieldDays','sSIPct','sWHTPct'];
 function calcSalary() {
-  const g = (id) => +document.getElementById(id).value || 0;
+  const g = (id) => unnum(document.getElementById(id).value);
   const rate = g('sHourly');
   const normalPay = rate * g('sNormal');
   const otPay     = rate * 1.5 * g('sOT');
@@ -616,20 +714,21 @@ document.getElementById('sSave').addEventListener('click', () => {
   const date = document.getElementById('sDate').value || todayISO();
   const record = {
     id: uid(), date,
-    hourlyRate: +document.getElementById('sHourly').value || 0,
-    normalHours: +document.getElementById('sNormal').value || 0,
-    otHours: +document.getElementById('sOT').value || 0,
-    ntHours: +document.getElementById('sNT').value || 0,
-    otntHours: +document.getElementById('sOTNT').value || 0,
-    fieldAllowance: +document.getElementById('sFieldAllow').value || 0,
-    fieldDays: +document.getElementById('sFieldDays').value || 0,
-    siPct: +document.getElementById('sSIPct').value || 0,
-    whtPct: +document.getElementById('sWHTPct').value || 0,
+    hourlyRate:     unnum(document.getElementById('sHourly').value),
+    normalHours:    unnum(document.getElementById('sNormal').value),
+    otHours:        unnum(document.getElementById('sOT').value),
+    ntHours:        unnum(document.getElementById('sNT').value),
+    otntHours:      unnum(document.getElementById('sOTNT').value),
+    fieldAllowance: unnum(document.getElementById('sFieldAllow').value),
+    fieldDays:      unnum(document.getElementById('sFieldDays').value),
+    siPct:          unnum(document.getElementById('sSIPct').value),
+    whtPct:         unnum(document.getElementById('sWHTPct').value),
     ...r
   };
   db.salaries.push(record);
   db.income.push({ id: uid(), date, amount: r.net, type: 'Salary', notes: `Net salary (Gross ${fmt(r.gross)}, SI ${fmt(r.si)}, WHT ${fmt(r.wht)})` });
   save();
+  renderDashboard();
   toast('Saved and added to Income');
 });
 
@@ -638,7 +737,7 @@ document.getElementById('sSave').addEventListener('click', () => {
 ============================================================ */
 document.getElementById('incAdd').addEventListener('click', () => {
   const date = document.getElementById('incDate').value || todayISO();
-  const amount = +document.getElementById('incAmount').value || 0;
+  const amount = unmoney(document.getElementById('incAmount').value);
   if (amount <= 0) { toast('Enter an amount'); return; }
   db.income.push({
     id: uid(), date, amount,
@@ -649,14 +748,14 @@ document.getElementById('incAdd').addEventListener('click', () => {
   document.getElementById('incAmount').value = '';
   document.getElementById('incNotes').value = '';
   renderIncome();
+  renderDashboard();
   toast('Income added');
 });
 
 function renderIncome() {
-  const m = document.getElementById('incMonth').value;
-  const y = document.getElementById('incYear').value;
+  const { from, to } = getRange('inc');
   const list = db.income
-    .filter(x => inPeriod(x.date, m, y))
+    .filter(x => inRange(x.date, from, to))
     .sort((a,b) => b.date.localeCompare(a.date));
   document.getElementById('incCount').textContent = list.length;
   const el = document.getElementById('incList');
@@ -665,7 +764,7 @@ function renderIncome() {
     <div class="list-item">
       <div>
         <div><b>${x.type || 'Income'}</b></div>
-        <div class="meta">${x.date}${x.notes ? ' · ' + escapeHTML(x.notes) : ''}</div>
+        <div class="meta">${x.date}${x.notes ? ' · <span class="note">' + escapeHTML(x.notes) + '</span>' : ''}</div>
       </div>
       <div style="display:flex;align-items:center">
         <div class="amount pos">${fmt(x.amount)}</div>
@@ -677,7 +776,7 @@ function renderIncome() {
   el.querySelectorAll('[data-del-inc]').forEach(b => b.addEventListener('click', () => {
     if (!confirm('Delete this income entry?')) return;
     db.income = db.income.filter(i => i.id !== b.dataset.delInc);
-    save(); renderIncome();
+    save(); renderIncome(); renderDashboard();
   }));
 }
 
@@ -701,7 +800,7 @@ function categoryOptions() {
 
 document.getElementById('expAdd').addEventListener('click', () => {
   const date = document.getElementById('expDate').value || todayISO();
-  const amount = +document.getElementById('expAmount').value || 0;
+  const amount = unmoney(document.getElementById('expAmount').value);
   const categoryId = document.getElementById('expCategory').value;
   if (amount <= 0) { toast('Enter an amount'); return; }
   if (!categoryId) { toast('Add a category first'); return; }
@@ -711,16 +810,16 @@ document.getElementById('expAdd').addEventListener('click', () => {
   document.getElementById('expAmount').value = '';
   document.getElementById('expNotes').value = '';
   renderExpenses();
+  renderDashboard();
   toast(expMode === 'actual' ? 'Actual expense added' : 'Planned expense added');
 });
 
 function renderExpenses() {
   document.getElementById('expCategory').innerHTML = categoryOptions();
-  const m = document.getElementById('expMonth').value;
-  const y = document.getElementById('expYear').value;
+  const { from, to } = getRange('exp');
   const source = expMode === 'actual' ? db.actual : db.planned;
   const list = source
-    .filter(x => inPeriod(x.date, m, y))
+    .filter(x => inRange(x.date, from, to))
     .sort((a,b) => b.date.localeCompare(a.date));
   document.getElementById('expCount').textContent = list.length;
   const el = document.getElementById('expList');
@@ -732,7 +831,7 @@ function renderExpenses() {
     <div class="list-item">
       <div>
         <div><b>${escapeHTML(cat?.name || 'Unknown')}</b><span class="tag ${groupClass}">${cat?.group || '?'}</span></div>
-        <div class="meta">${x.date}${x.notes ? ' · ' + escapeHTML(x.notes) : ''}</div>
+        <div class="meta">${x.date}${x.notes ? ' · <span class="note">' + escapeHTML(x.notes) + '</span>' : ''}</div>
       </div>
       <div style="display:flex;align-items:center">
         <div class="amount neg">${fmt(x.amount)}</div>
@@ -746,7 +845,7 @@ function renderExpenses() {
     if (!confirm('Delete this expense?')) return;
     if (expMode === 'actual') db.actual = db.actual.filter(i => i.id !== b.dataset.delExp);
     else db.planned = db.planned.filter(i => i.id !== b.dataset.delExp);
-    save(); renderExpenses();
+    save(); renderExpenses(); renderDashboard();
   }));
 }
 
@@ -824,20 +923,14 @@ document.getElementById('btnReset').addEventListener('click', () => {
 /* ============================================================
    Dashboard
 ============================================================ */
-document.getElementById('dashMonth').addEventListener('change', renderDashboard);
-document.getElementById('dashYear').addEventListener('change', renderDashboard);
-document.getElementById('incMonth').addEventListener('change', renderIncome);
-document.getElementById('incYear').addEventListener('change', renderIncome);
-document.getElementById('expMonth').addEventListener('change', renderExpenses);
-document.getElementById('expYear').addEventListener('change', renderExpenses);
-
 function renderDashboard() {
-  const m = document.getElementById('dashMonth').value;
-  const y = document.getElementById('dashYear').value;
+  const { from, to } = getRange('dash');
+  const sub = (from || to) ? `${from || '…'} → ${to || '…'}` : 'All time';
+  document.getElementById('hdrSub').textContent = sub;
 
-  const income = db.income.filter(x => inPeriod(x.date, m, y));
-  const actual = db.actual.filter(x => inPeriod(x.date, m, y));
-  const planned = db.planned.filter(x => inPeriod(x.date, m, y));
+  const income  = db.income.filter(x  => inRange(x.date, from, to));
+  const actual  = db.actual.filter(x  => inRange(x.date, from, to));
+  const planned = db.planned.filter(x => inRange(x.date, from, to));
 
   const totalIncome = income.reduce((s,x) => s + (+x.amount||0), 0);
   const totalExp    = actual.reduce((s,x) => s + (+x.amount||0), 0);
@@ -853,31 +946,11 @@ function renderDashboard() {
   });
   drawDonut(groups);
 
-  // Planned vs Actual
-  drawPvA(planned.reduce((s,x)=>s+ (+x.amount||0), 0), totalExp);
+  // Planned vs Actual per category
+  drawPvA(planned, actual);
 
-  // Category breakdown
-  const byCat = {};
-  actual.forEach(x => {
-    const cat = db.categories.find(c => c.id === x.categoryId);
-    const name = cat ? cat.name : 'Unknown';
-    byCat[name] = (byCat[name] || 0) + (+x.amount||0);
-  });
-  const sortedCat = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
-  const catMax = sortedCat[0]?.[1] || 1;
-  document.getElementById('catBreakdown').innerHTML = sortedCat.length
-    ? sortedCat.map(([n,v]) => `
-      <div class="breakdown-item" style="display:block">
-        <div style="display:flex;justify-content:space-between">
-          <span class="name">${escapeHTML(n)}</span>
-          <span class="val">${fmt(v)}</span>
-        </div>
-        <div class="bar"><span style="width:${(v/catMax*100).toFixed(1)}%"></span></div>
-      </div>`).join('')
-    : '<div class="empty">No expenses yet.</div>';
-
-  // Monthly trend (last 6 months)
-  drawMonthlyTrend();
+  // Monthly trend — honors the dashboard's date range
+  drawMonthlyTrend(from, to);
 }
 
 function drawDonut(g) {
@@ -914,43 +987,154 @@ function drawDonut(g) {
   }).join('');
 }
 
-function drawPvA(planned, actual) {
-  const max = Math.max(planned, actual, 1);
-  document.getElementById('pvaChart').innerHTML = `
-    <div class="breakdown-item" style="display:block">
-      <div style="display:flex;justify-content:space-between"><span class="name">Planned</span><span class="val">${fmt(planned)}</span></div>
-      <div class="bar"><span style="width:${(planned/max*100).toFixed(1)}%;background:var(--primary)"></span></div>
-    </div>
-    <div class="breakdown-item" style="display:block">
-      <div style="display:flex;justify-content:space-between"><span class="name">Actual</span><span class="val">${fmt(actual)}</span></div>
-      <div class="bar"><span style="width:${(actual/max*100).toFixed(1)}%;background:${actual>planned?'var(--danger)':'var(--success)'}"></span></div>
-    </div>
-    <div class="helper">${actual > planned ? `Over budget by ${fmt(actual-planned)}` : `Under budget by ${fmt(planned-actual)}`}</div>
-  `;
+function drawPvA(plannedList, actualList) {
+  const rows = {};
+  const bump = (list, key) => list.forEach(x => {
+    const cat = db.categories.find(c => c.id === x.categoryId);
+    const name = cat ? cat.name : 'Unknown';
+    if (!rows[name]) rows[name] = { planned: 0, actual: 0, group: cat?.group || 'Needs' };
+    rows[name][key] += (+x.amount || 0);
+  });
+  bump(plannedList, 'planned');
+  bump(actualList,  'actual');
+
+  const entries = Object.entries(rows)
+    .sort((a, b) => (b[1].planned + b[1].actual) - (a[1].planned + a[1].actual));
+
+  const el = document.getElementById('pvaChart');
+  if (!entries.length) { el.innerHTML = '<div class="empty">No planned or actual expenses in this period.</div>'; return; }
+
+  const max = Math.max(1, ...entries.flatMap(([_, v]) => [v.planned, v.actual]));
+  let totP = 0, totA = 0;
+
+  const html = entries.map(([name, v]) => {
+    totP += v.planned; totA += v.actual;
+    const diff = v.actual - v.planned;
+    let diffHTML = '';
+    if (v.planned || v.actual) {
+      if (diff > 0)      diffHTML = `<span style="color:var(--danger);font-weight:600">+${fmt(diff)}</span>`;
+      else if (diff < 0) diffHTML = `<span style="color:var(--success);font-weight:600">${fmt(diff)}</span>`;
+      else               diffHTML = `<span style="color:var(--text-2)">±0</span>`;
+    }
+    const actualColor = v.actual > v.planned ? 'var(--danger)' : (v.planned > 0 ? 'var(--success)' : 'var(--text-2)');
+    return `
+      <div class="pva-row">
+        <div class="pva-head">
+          <span class="cat">${escapeHTML(name)}<span class="tag ${v.group.toLowerCase()}">${v.group}</span></span>
+          ${diffHTML}
+        </div>
+        <div class="pva-bar-row">
+          <span class="pva-lbl">Planned</span>
+          <div class="bar"><span style="width:${(v.planned / max * 100).toFixed(1)}%;background:var(--primary)"></span></div>
+          <span class="pva-amt">${fmt(v.planned)}</span>
+        </div>
+        <div class="pva-bar-row">
+          <span class="pva-lbl">Actual</span>
+          <div class="bar"><span style="width:${(v.actual / max * 100).toFixed(1)}%;background:${actualColor}"></span></div>
+          <span class="pva-amt">${fmt(v.actual)}</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  const totDiff = totA - totP;
+  const totLine = `Total — Planned <b>${fmt(totP)}</b> · Actual <b>${fmt(totA)}</b> · ${
+    totDiff > 0 ? `<span style="color:var(--danger)">over by ${fmt(totDiff)}</span>` :
+    totDiff < 0 ? `<span style="color:var(--success)">under by ${fmt(-totDiff)}</span>` :
+                  `<span style="color:var(--text-2)">on target</span>`
+  }`;
+  el.innerHTML = html + `<div class="helper" style="text-align:right;margin-top:8px">${totLine}</div>`;
 }
 
-function drawMonthlyTrend() {
+function drawMonthlyTrend(from, to) {
   const now = new Date();
-  const months = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push({ y: d.getFullYear(), m: d.getMonth() });
+  let startY, startM, endY, endM, rangeLabel;
+
+  if (!from && !to) {
+    // All Time: span from earliest data → latest data (fallback: last 6 months)
+    const dates = [...db.income, ...db.actual].map(x => x.date).filter(Boolean).sort();
+    if (dates.length) {
+      const first = parseISO(dates[0]);
+      const last  = parseISO(dates[dates.length - 1]);
+      startY = first.getFullYear(); startM = first.getMonth();
+      endY   = last.getFullYear();  endM   = last.getMonth();
+      rangeLabel = '(all time)';
+    } else {
+      const past = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+      startY = past.getFullYear(); startM = past.getMonth();
+      endY   = now.getFullYear();  endM   = now.getMonth();
+      rangeLabel = '(last 6 months)';
+    }
+  } else {
+    const start = from ? parseISO(from) : parseISO(to);
+    const end   = to   ? parseISO(to)   : parseISO(from);
+    startY = start.getFullYear(); startM = start.getMonth();
+    endY   = end.getFullYear();   endM   = end.getMonth();
+    rangeLabel = `(${from || '…'} → ${to || '…'})`;
   }
-  const data = months.map(({y,m}) => {
-    const inc = db.income.filter(x => { const d = parseISO(x.date); return d.getFullYear()===y && d.getMonth()===m; }).reduce((s,x)=>s+ (+x.amount||0), 0);
-    const exp = db.actual.filter(x => { const d = parseISO(x.date); return d.getFullYear()===y && d.getMonth()===m; }).reduce((s,x)=>s+ (+x.amount||0), 0);
-    return { label: monthNames[m], inc, exp };
+
+  // Build inclusive month list (renamed loop vars to avoid any shadow-scope confusion)
+  const months = [];
+  let curY = startY, curM = startM;
+  while (curY < endY || (curY === endY && curM <= endM)) {
+    months.push({ y: curY, m: curM });
+    curM++; if (curM > 11) { curM = 0; curY++; }
+    if (months.length > 36) break;
+  }
+
+  const spansYears = months.length > 0 && months[0].y !== months[months.length - 1].y;
+  const data = months.map((mo) => {
+    const inMonth = (x) => {
+      const d = parseISO(x.date);
+      return d.getFullYear() === mo.y && d.getMonth() === mo.m;
+    };
+    const inc = db.income.filter(inMonth).reduce((s, x) => s + (+x.amount || 0), 0);
+    const exp = db.actual.filter(inMonth).reduce((s, x) => s + (+x.amount || 0), 0);
+    const label = spansYears ? `${monthNames[mo.m]} '${String(mo.y).slice(2)}` : monthNames[mo.m];
+    return { label, inc, exp };
   });
-  const max = Math.max(1, ...data.map(d => Math.max(d.inc, d.exp)));
-  document.getElementById('monthlyChart').innerHTML = data.map(d => `
-    <div class="col">
-      <div class="bars">
-        <span style="height:${(d.inc/max*100).toFixed(1)}%;background:var(--success)" title="Income ${fmt(d.inc)}"></span>
-        <span style="height:${(d.exp/max*100).toFixed(1)}%;background:var(--danger)" title="Expenses ${fmt(d.exp)}"></span>
-      </div>
-      <div class="lbl">${d.label}</div>
-    </div>
-  `).join('');
+
+  document.getElementById('trendRangeLbl').textContent = rangeLabel;
+
+  const chart = document.getElementById('monthlyChart');
+  if (!data.length) { chart.innerHTML = '<div class="empty">No months in this range.</div>'; return; }
+
+  const rawMax = Math.max(0, ...data.map(d => Math.max(d.inc, d.exp)));
+  const axisMax = rawMax > 0 ? niceCeil(rawMax) : 1;
+
+  const barsHTML = data.map(d => {
+    const incPct = (d.inc / axisMax * 100).toFixed(1);
+    const expPct = (d.exp / axisMax * 100).toFixed(1);
+    const incLbl = d.inc > 0 ? `<div class="val-inc">${fmtCompact(d.inc)}</div>` : `<div class="val-zero">·</div>`;
+    const expLbl = d.exp > 0 ? `<div class="val-exp">${fmtCompact(d.exp)}</div>` : `<div class="val-zero">·</div>`;
+    return `
+      <div class="col">
+        <div class="bars">
+          <span style="height:${incPct}%;background:var(--success)" title="Income ${fmt(d.inc)}"></span>
+          <span style="height:${expPct}%;background:var(--danger)"  title="Expenses ${fmt(d.exp)}"></span>
+        </div>
+        <div class="lbl">${d.label}</div>
+        ${incLbl}
+        ${expLbl}
+      </div>`;
+  }).join('');
+
+  const yAxisHTML = rawMax > 0 ? `
+    <div class="y-axis">
+      <span>${fmtCompact(axisMax)}</span>
+      <span>${fmtCompact(axisMax / 2)}</span>
+      <span>₮0</span>
+    </div>` : `
+    <div class="y-axis">
+      <span>&nbsp;</span>
+      <span>&nbsp;</span>
+      <span>₮0</span>
+    </div>`;
+
+  chart.innerHTML = `
+    <div class="trend-wrap">
+      ${yAxisHTML}
+      <div class="barchart">${barsHTML}</div>
+    </div>`;
 }
 
 /* ============================================================
@@ -963,7 +1147,10 @@ function escapeHTML(s) {
 /* ============================================================
    Init
 ============================================================ */
-populatePeriodSelects();
+initPeriodFilter('dash', renderDashboard);
+initPeriodFilter('inc',  renderIncome);
+initPeriodFilter('exp',  renderExpenses);
+initMoneyInputs();
 document.getElementById('sDate').value = todayISO();
 document.getElementById('incDate').value = todayISO();
 document.getElementById('expDate').value = todayISO();
