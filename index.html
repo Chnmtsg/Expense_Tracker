@@ -236,6 +236,48 @@
   .barchart .col { flex: 1 0 44px; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; }
   .barchart .col .bars { display: flex; align-items: flex-end; gap: 3px; height: 110px; width: 100%; justify-content: center; }
   .barchart .col .bars > span { width: 12px; border-radius: 3px 3px 0 0; min-height: 2px; }
+  .barchart.compact .col { flex: 0 0 28px; }
+  .barchart.compact .col .bars > span { width: 10px; }
+  .barchart.compact .col .lbl { font-size: 9px; }
+
+  /* Stacked bars */
+  .barchart .col .bars > .stack {
+    width: 12px; display: flex; flex-direction: column;
+    border-radius: 3px 3px 0 0; overflow: hidden; min-height: 2px;
+  }
+  .barchart.compact .col .bars > .stack { width: 10px; }
+  .barchart .col .bars > .stack > span { display: block; min-height: 1px; width: 100%; }
+
+  /* Clickable columns + selected highlight */
+  .barchart .col.clickable { cursor: pointer; }
+  .barchart .col.selected {
+    background: rgba(37, 99, 235, .10);
+    border-radius: 6px;
+  }
+  .barchart .col.selected .lbl { color: var(--primary); font-weight: 700; }
+
+  /* Chips */
+  .chip-row-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .chip-row-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 4px 10px 4px 8px; font-size: 12px; font-weight: 500;
+    cursor: pointer; user-select: none;
+    transition: opacity .15s, background .15s;
+  }
+  .chip .chip-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--chip-color, var(--text-2)); flex-shrink: 0;
+  }
+  .chip.off { opacity: .4; }
+  .chip.off .chip-dot { background: var(--text-2); }
+  .chip-mini { padding: 4px 10px; font-size: 12px; border-radius: 999px; }
+
+  /* Category dot in day-detail rows */
+  .cat-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
   .barchart .col .lbl { font-size: 10px; color: var(--text-2); font-weight: 600; margin-top: 2px; }
   .barchart .col .val-inc { font-size: 9px; line-height: 1.2; color: var(--success); font-weight: 700; }
   .barchart .col .val-exp { font-size: 9px; line-height: 1.2; color: var(--danger); font-weight: 600; }
@@ -444,6 +486,42 @@
   </div>
 </section>
 
+<!-- ============ DAILY CHART ============ -->
+<section class="screen" id="daily">
+  <div class="segmented">
+    <button data-daily-mode="actual" class="active">Actual</button>
+    <button data-daily-mode="planned">Planned</button>
+  </div>
+
+  <div class="filter-row">
+    <select id="dailyPreset"></select>
+    <input type="date" id="dailyFrom" aria-label="From date" />
+    <input type="date" id="dailyTo" aria-label="To date" />
+  </div>
+
+  <div class="card" id="dailyChipsCard" style="padding:12px 14px">
+    <div class="chip-row-head">
+      <span class="chip-row-title">Categories</span>
+      <span class="row-actions">
+        <button class="secondary chip-mini" data-chip-all>All</button>
+        <button class="secondary chip-mini" data-chip-none>None</button>
+      </span>
+    </div>
+    <div id="dailyChips" class="chip-row"></div>
+  </div>
+
+  <div class="card">
+    <h3>Daily Breakdown <span id="dailyRangeLbl" style="font-weight:400;color:var(--text-2);font-size:12px"></span></h3>
+    <div id="dailyStackChart"></div>
+    <div class="helper" style="margin-top:8px">Tap a day to see its breakdown below.</div>
+  </div>
+
+  <div class="card" id="dayDetailCard" style="display:none">
+    <h3><span id="dayDetailTitle">Day details</span> <button class="secondary chip-mini" id="dayDetailClose" style="float:right">Close</button></h3>
+    <div id="dayDetailBody"></div>
+  </div>
+</section>
+
 <!-- ============ SETTINGS ============ -->
 <section class="screen" id="settings">
   <div class="card">
@@ -495,6 +573,7 @@
   <button data-nav="salary"><span class="ic">💼</span><span>Salary</span></button>
   <button data-nav="income"><span class="ic">💰</span><span>Income</span></button>
   <button data-nav="expenses"><span class="ic">🧾</span><span>Expenses</span></button>
+  <button data-nav="daily"><span class="ic">📈</span><span>Daily</span></button>
   <button data-nav="settings"><span class="ic">⚙️</span><span>Settings</span></button>
 </nav>
 
@@ -714,6 +793,7 @@ const titles = {
   salary:    'Salary Calculator',
   income:    'Income',
   expenses:  'Expenses',
+  daily:     'Daily Chart',
   settings:  'Settings'
 };
 document.querySelectorAll('nav.tabbar button').forEach(b => {
@@ -727,6 +807,7 @@ function navigate(name) {
   if (name === 'dashboard') renderDashboard();
   if (name === 'income') renderIncome();
   if (name === 'expenses') renderExpenses();
+  if (name === 'daily') renderDaily();
   if (name === 'settings') renderSettings();
 }
 
@@ -1443,6 +1524,209 @@ function drawMonthlyTrend(from, to) {
 }
 
 /* ============================================================
+   Daily chart screen
+============================================================ */
+const CATEGORY_COLORS = [
+  '#3B82F6', '#F59E0B', '#10B981', '#EF4444', '#8B5CF6', '#EC4899',
+  '#06B6D4', '#F97316', '#14B8A6', '#A855F7', '#84CC16', '#6366F1'
+];
+function categoryColor(id) {
+  const idx = db.categories.findIndex(c => c.id === id);
+  return idx >= 0 ? CATEGORY_COLORS[idx % CATEGORY_COLORS.length] : '#94A3B8';
+}
+
+let dailyMode = 'actual';
+let dailyExcluded = new Set();      // category IDs excluded from chart
+let dailySelectedDate = null;       // ISO date of currently-selected bar
+
+// Mode toggle
+document.querySelectorAll('.segmented button[data-daily-mode]').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.segmented button[data-daily-mode]').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    dailyMode = b.dataset.dailyMode;
+    dailySelectedDate = null;
+    renderDaily();
+  });
+});
+document.getElementById('dayDetailClose').addEventListener('click', () => {
+  dailySelectedDate = null; renderDaily();
+});
+document.querySelector('[data-chip-all]').addEventListener('click', () => {
+  dailyExcluded.clear(); renderDaily();
+});
+document.querySelector('[data-chip-none]').addEventListener('click', () => {
+  const source = dailyMode === 'actual' ? db.actual : db.planned;
+  const { from, to } = getRange('daily');
+  const activeIds = new Set(source.filter(x => inRange(x.date, from, to)).map(x => x.categoryId));
+  activeIds.forEach(id => dailyExcluded.add(id));
+  renderDaily();
+});
+
+function renderDaily() {
+  const { from, to } = getRange('daily');
+  renderDailyChips();
+  drawDailyStackedChart(from, to);
+  renderDaySelected();
+}
+
+function renderDailyChips() {
+  const container = document.getElementById('dailyChips');
+  const source = dailyMode === 'actual' ? db.actual : db.planned;
+  const { from, to } = getRange('daily');
+  const activeIds = new Set(source.filter(x => inRange(x.date, from, to)).map(x => x.categoryId));
+  const cats = db.categories.filter(c => activeIds.has(c.id));
+  if (!cats.length) { container.innerHTML = '<span style="font-size:12px;color:var(--text-2)">No categories with data in this range.</span>'; return; }
+  container.innerHTML = cats.map(c => {
+    const off = dailyExcluded.has(c.id);
+    return `<button class="chip${off ? ' off' : ''}" data-chip="${c.id}" style="--chip-color:${categoryColor(c.id)}">
+      <span class="chip-dot"></span>${escapeHTML(c.name)}
+    </button>`;
+  }).join('');
+  container.querySelectorAll('[data-chip]').forEach(b => b.addEventListener('click', () => {
+    const id = b.dataset.chip;
+    if (dailyExcluded.has(id)) dailyExcluded.delete(id); else dailyExcluded.add(id);
+    renderDaily();
+  }));
+}
+
+function drawDailyStackedChart(from, to) {
+  const source = dailyMode === 'actual' ? db.actual : db.planned;
+
+  let start, end;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  if (from) start = parseISO(from);
+  if (to)   end   = parseISO(to);
+  if (!end)   end   = new Date(today);
+  if (!start) { start = new Date(end); start.setDate(end.getDate() - 29); }
+
+  const MAX_DAYS = 90;
+  const spanDays = Math.floor((end - start) / 86400000) + 1;
+  let rangeNote;
+  if (spanDays > MAX_DAYS) {
+    start = new Date(end); start.setDate(end.getDate() - (MAX_DAYS - 1));
+    rangeNote = ` (last ${MAX_DAYS} days)`;
+  } else {
+    rangeNote = ` (${toLocalISO(start)} → ${toLocalISO(end)})`;
+  }
+  document.getElementById('dailyRangeLbl').textContent = rangeNote;
+
+  const days = [];
+  const cur = new Date(start);
+  while (cur <= end) {
+    const iso = toLocalISO(cur);
+    const entries = source.filter(x => x.date === iso && !dailyExcluded.has(x.categoryId));
+    const byCat = {};
+    entries.forEach(x => { byCat[x.categoryId] = (byCat[x.categoryId] || 0) + (+x.amount || 0); });
+    const total = Object.values(byCat).reduce((a, b) => a + b, 0);
+    days.push({ date: iso, day: cur.getDate(), month: cur.getMonth(), byCat, total });
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  const chart = document.getElementById('dailyStackChart');
+  if (!days.length) { chart.innerHTML = '<div class="empty">No days in this range.</div>'; return; }
+
+  const rawMax = Math.max(0, ...days.map(d => d.total));
+  const axisMax = rawMax > 0 ? niceCeil(rawMax) : 1;
+
+  const barsHTML = days.map((d, i) => {
+    const totalPct = (d.total / axisMax * 100).toFixed(1);
+    const showMonth = i === 0 || d.month !== days[i - 1].month;
+    const label = showMonth ? `${monthNames[d.month]} ${d.day}` : String(d.day);
+
+    // Segments — largest at bottom (foundation), so sort ASC then flex-column stacks first→top
+    // With flex-column, first child = top of stack. We want largest at BOTTOM, so put smallest first.
+    const segments = Object.entries(d.byCat)
+      .sort((a, b) => a[1] - b[1])
+      .map(([catId, amt]) => {
+        const segPct = d.total > 0 ? (amt / d.total * 100).toFixed(1) : '0';
+        const cat = db.categories.find(c => c.id === catId);
+        return `<span style="background:${categoryColor(catId)}; height:${segPct}%" title="${escapeHTML(cat?.name || 'Unknown')}: ${fmt(amt)}"></span>`;
+      }).join('');
+
+    const isSel = d.date === dailySelectedDate;
+    const totalLbl = d.total > 0 ? `<div class="val-exp">${fmtCompact(d.total)}</div>` : `<div class="val-zero">·</div>`;
+    const stackHTML = d.total > 0
+      ? `<div class="stack" style="height:${totalPct}%">${segments}</div>`
+      : `<span style="height:2px;background:var(--border);width:10px"></span>`;
+
+    return `
+      <div class="col clickable${isSel ? ' selected' : ''}" data-day="${d.date}">
+        <div class="bars">${stackHTML}</div>
+        <div class="lbl">${label}</div>
+        ${totalLbl}
+      </div>`;
+  }).join('');
+
+  const yAxisHTML = rawMax > 0 ? `
+    <div class="y-axis">
+      <span>${fmtCompact(axisMax)}</span>
+      <span>${fmtCompact(axisMax / 2)}</span>
+      <span>₮0</span>
+    </div>` : `
+    <div class="y-axis">
+      <span>&nbsp;</span><span>&nbsp;</span><span>₮0</span>
+    </div>`;
+
+  chart.innerHTML = `
+    <div class="trend-wrap">
+      ${yAxisHTML}
+      <div class="barchart compact">${barsHTML}</div>
+    </div>`;
+
+  chart.querySelectorAll('[data-day]').forEach(el => {
+    el.addEventListener('click', () => {
+      const d = el.dataset.day;
+      dailySelectedDate = (dailySelectedDate === d) ? null : d;
+      renderDaily();
+    });
+  });
+}
+
+function renderDaySelected() {
+  const card = document.getElementById('dayDetailCard');
+  if (!dailySelectedDate) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+
+  const source = dailyMode === 'actual' ? db.actual : db.planned;
+  const entries = source.filter(x => x.date === dailySelectedDate && !dailyExcluded.has(x.categoryId));
+  const d = parseISO(dailySelectedDate);
+  const title = `${monthNames[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()} — ${dailyMode === 'actual' ? 'Actual' : 'Planned'}`;
+  document.getElementById('dayDetailTitle').textContent = title;
+
+  const body = document.getElementById('dayDetailBody');
+  if (!entries.length) { body.innerHTML = '<div class="empty">No expenses on this day.</div>'; return; }
+
+  // Group by category
+  const byCat = {};
+  entries.forEach(x => {
+    if (!byCat[x.categoryId]) byCat[x.categoryId] = { total: 0, items: [] };
+    byCat[x.categoryId].total += (+x.amount || 0);
+    byCat[x.categoryId].items.push(x);
+  });
+  const sorted = Object.entries(byCat).sort((a, b) => b[1].total - a[1].total);
+  const grandTotal = sorted.reduce((s, [, v]) => s + v.total, 0);
+
+  body.innerHTML = sorted.map(([catId, v]) => {
+    const cat = db.categories.find(c => c.id === catId);
+    const color = categoryColor(catId);
+    const groupTag = cat ? `<span class="tag ${cat.group.toLowerCase()}">${cat.group}</span>` : '';
+    const itemsHTML = v.items.map(x => `
+      <div class="meta" style="margin-left:18px;margin-top:2px">
+        · ${fmt(x.amount)}${x.notes ? ' — <span class="note">' + escapeHTML(x.notes) + '</span>' : ''}
+      </div>`).join('');
+    return `
+      <div class="list-item" style="align-items:flex-start">
+        <div style="flex:1">
+          <div><span class="cat-dot" style="background:${color}"></span><b>${escapeHTML(cat?.name || 'Unknown')}</b>${groupTag}</div>
+          ${itemsHTML}
+        </div>
+        <div class="amount neg" style="flex-shrink:0">${fmt(v.total)}</div>
+      </div>`;
+  }).join('') + `<div class="helper" style="text-align:right;margin-top:8px">Total: <b>${fmt(grandTotal)}</b></div>`;
+}
+
+/* ============================================================
    Edit modal (Income / Expense)
 ============================================================ */
 let editCtx = null; // { kind: 'income' | 'actual' | 'planned', id }
@@ -1534,9 +1818,10 @@ function escapeHTML(s) {
 /* ============================================================
    Init
 ============================================================ */
-initPeriodFilter('dash', renderDashboard);
-initPeriodFilter('inc',  renderIncome);
-initPeriodFilter('exp',  renderExpenses);
+initPeriodFilter('dash',  renderDashboard);
+initPeriodFilter('inc',   renderIncome);
+initPeriodFilter('exp',   renderExpenses);
+initPeriodFilter('daily', renderDaily);
 initMoneyInputs();
 document.getElementById('sDate').value = todayISO();
 document.getElementById('incDate').value = todayISO();
