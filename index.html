@@ -272,11 +272,15 @@
   nav.tabbar button {
     flex: 1; background: transparent; border: none; cursor: pointer;
     display: flex; flex-direction: column; align-items: center; gap: 2px;
-    padding: 6px 4px; color: var(--text-2); font-size: 11px; font-weight: 500;
-    border-radius: 8px;
+    padding: 6px 2px; color: var(--text-2); font-size: 10px; font-weight: 500;
+    border-radius: 8px; min-width: 0;
   }
   nav.tabbar button.active { color: var(--primary); }
   nav.tabbar button .ic { font-size: 20px; line-height: 1; }
+  @media (max-width: 360px) {
+    nav.tabbar button { font-size: 9px; }
+    nav.tabbar button .ic { font-size: 18px; }
+  }
 
   .segmented {
     display: flex; background: var(--surface-2); border-radius: var(--radius-sm);
@@ -372,6 +376,48 @@
 
   /* Category dot in day-detail rows */
   .cat-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+
+  /* Goals */
+  .goal-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px;
+    box-shadow: var(--shadow); margin-bottom: 12px;
+  }
+  .goal-card.done { border-color: var(--success); background: linear-gradient(to right, rgba(16, 185, 129, .06), transparent); }
+  .goal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  .goal-title { display: flex; gap: 10px; align-items: center; flex: 1; min-width: 0; }
+  .goal-icon { font-size: 26px; flex-shrink: 0; }
+  .goal-name { font-weight: 700; font-size: 15px; }
+  .goal-sub { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+  .goal-pct { font-size: 18px; font-weight: 800; color: var(--primary); flex-shrink: 0; }
+  .goal-card.done .goal-pct { color: var(--success); }
+  .goal-bar {
+    height: 10px; background: var(--surface-2);
+    border-radius: 5px; overflow: hidden; margin-bottom: 10px;
+  }
+  .goal-bar > span {
+    display: block; height: 100%; background: var(--primary);
+    border-radius: 5px; transition: width .3s ease;
+  }
+  .goal-card.done .goal-bar > span { background: var(--success); }
+  .goal-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .goal-remaining { font-size: 13px; color: var(--text); font-weight: 500; }
+  .goal-actions { display: flex; gap: 6px; }
+  .goal-actions button.goal-add {
+    background: var(--primary); color: white; border: none;
+    padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer;
+  }
+  .goal-actions button.goal-add:hover { background: var(--primary-2); }
+  .goal-actions button.goal-icon-btn {
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+    width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 14px;
+    padding: 0; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .goal-actions button.goal-icon-btn:hover { background: var(--border); }
+  .goal-deadline { font-size: 12px; color: var(--text-2); }
+  .goal-deadline.warning { color: var(--warning); font-weight: 600; }
+  .goal-deadline.danger  { color: var(--danger);  font-weight: 600; }
 
   /* Calendar heatmap */
   .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
@@ -666,6 +712,32 @@
   </div>
 </section>
 
+<!-- ============ GOALS ============ -->
+<section class="screen" id="goals">
+  <div class="card">
+    <h3>New Goal</h3>
+    <div class="row-inline" style="gap:8px;align-items:flex-end">
+      <div style="flex:0 0 70px">
+        <label style="margin-top:0">Icon</label>
+        <input type="text" id="goalIcon" maxlength="2" value="🎯" style="text-align:center;font-size:22px" />
+      </div>
+      <div style="flex:1">
+        <label style="margin-top:0">Name <span class="required-mark">*</span></label>
+        <input type="text" id="goalName" placeholder="e.g. Travel to Japan" autocomplete="off" />
+      </div>
+    </div>
+    <label>Target Amount (₮) <span class="required-mark">*</span></label>
+    <input type="text" id="goalTarget" class="money-input" inputmode="numeric" autocomplete="off" placeholder="0" />
+    <label>Deadline (optional)</label>
+    <input type="text" id="goalDeadline" readonly placeholder="📅 Tap to choose date" style="cursor: pointer;" />
+    <label>Notes (optional)</label>
+    <textarea id="goalNotes" placeholder="e.g. Tokyo trip Sep 2027..."></textarea>
+    <button class="primary" id="goalAdd">➕ Add Goal</button>
+  </div>
+
+  <div id="goalList"></div>
+</section>
+
 <!-- ============ SETTINGS ============ -->
 <section class="screen" id="settings">
   <div class="card">
@@ -718,6 +790,7 @@
   <button data-nav="income"><span class="ic">💰</span><span>Income</span></button>
   <button data-nav="expenses"><span class="ic">🧾</span><span>Expenses</span></button>
   <button data-nav="daily"><span class="ic">📈</span><span>Daily</span></button>
+  <button data-nav="goals"><span class="ic">🎯</span><span>Goals</span></button>
   <button data-nav="settings"><span class="ic">⚙️</span><span>Settings</span></button>
 </nav>
 
@@ -740,6 +813,23 @@
     <button class="close-x" id="themeModalClose" aria-label="Close">×</button>
     <h3>Choose Theme</h3>
     <div id="themeSwatches" class="theme-swatches"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="datePickerModal">
+  <div class="modal" style="max-width: 380px;">
+    <button class="close-x" id="dpClose" aria-label="Close">×</button>
+    <h3 id="dpTitle">Pick a Date</h3>
+    <div class="cal-nav">
+      <button id="dpPrev" aria-label="Previous month">◀</button>
+      <div class="cal-month" id="dpMonth">Month Year</div>
+      <button id="dpNext" aria-label="Next month">▶</button>
+    </div>
+    <div id="dpGrid" class="cal-grid"></div>
+    <div style="display:flex; gap:8px; margin-top:16px;">
+      <button class="secondary" id="dpClear" style="flex:1">Clear</button>
+      <button class="primary" id="dpToday" style="flex:1; margin-top:0">Today</button>
+    </div>
   </div>
 </div>
 
@@ -795,11 +885,13 @@ function load() {
         categories: parsed.categories?.length ? parsed.categories : defaultCategories,
         incomeTypes: parsed.incomeTypes?.length ? parsed.incomeTypes : defaultIncomeTypes.map(t => ({ ...t, id: uid() })),
         salaries: parsed.salaries || [],
+        goals: parsed.goals || [],
+        goalContributions: parsed.goalContributions || [],
         settings: { theme: 'light', ...(parsed.settings || {}) }
       };
     }
   } catch (e) {}
-  if (!d) d = { income: [], planned: [], actual: [], categories: [...defaultCategories], incomeTypes: [...defaultIncomeTypes], salaries: [], settings: { theme: 'light' } };
+  if (!d) d = { income: [], planned: [], actual: [], categories: [...defaultCategories], incomeTypes: [...defaultIncomeTypes], salaries: [], goals: [], goalContributions: [], settings: { theme: 'light' } };
 
   // Migrate old income entries that stored a `type` string → typeId
   d.income.forEach(item => {
@@ -1019,6 +1111,7 @@ const titles = {
   income:    'Income',
   expenses:  'Expenses',
   daily:     'Daily Chart',
+  goals:     'Savings Goals',
   settings:  'Settings'
 };
 document.querySelectorAll('nav.tabbar button').forEach(b => {
@@ -1033,6 +1126,7 @@ function navigate(name) {
   if (name === 'income') renderIncome();
   if (name === 'expenses') renderExpenses();
   if (name === 'daily') renderDaily();
+  if (name === 'goals') renderGoals();
   if (name === 'settings') renderSettings();
 }
 
@@ -2034,11 +2128,293 @@ function renderDaySelected() {
 }
 
 /* ============================================================
+   Custom calendar date picker (used by any date input)
+============================================================ */
+let dpCurrentDate = null;
+let dpSelectedIso = null;
+let dpCallback = null;
+
+function openDatePicker(currentIso, callback, title = 'Pick a Date') {
+  dpCallback = callback;
+  dpSelectedIso = currentIso || null;
+  const startFrom = currentIso ? parseISO(currentIso) : new Date();
+  dpCurrentDate = new Date(startFrom.getFullYear(), startFrom.getMonth(), 1);
+  document.getElementById('dpTitle').textContent = title;
+  renderDatePickerGrid();
+  document.getElementById('datePickerModal').classList.add('show');
+}
+function closeDatePicker() {
+  document.getElementById('datePickerModal').classList.remove('show');
+  dpCallback = null;
+}
+function renderDatePickerGrid() {
+  const y = dpCurrentDate.getFullYear();
+  const m = dpCurrentDate.getMonth();
+  const daysInMonth  = new Date(y, m + 1, 0).getDate();
+  const firstWeekday = new Date(y, m, 1).getDay();
+  document.getElementById('dpMonth').textContent = `${monthNames[m]} ${y}`;
+
+  const cells = [];
+  for (let i = 0; i < firstWeekday; i++) cells.push({ empty: true });
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ day: d, iso: toLocalISO(new Date(y, m, d)) });
+  }
+  while (cells.length % 7 !== 0) cells.push({ empty: true });
+
+  const today = todayISO();
+  const wkHTML = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+    .map(d => `<div class="cal-wkday">${d}</div>`).join('');
+  const cellsHTML = cells.map(c => {
+    if (c.empty) return `<div class="cal-cell empty"></div>`;
+    const isToday = c.iso === today;
+    const isSel   = c.iso === dpSelectedIso;
+    return `<div class="cal-cell${isToday ? ' today' : ''}${isSel ? ' selected' : ''}" data-dp-day="${c.iso}">
+      <div class="cal-day" style="text-align:center;font-size:14px;color:var(--text)">${c.day}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('dpGrid').innerHTML = wkHTML + cellsHTML;
+
+  document.querySelectorAll('#dpGrid [data-dp-day]').forEach(el => {
+    el.addEventListener('click', () => {
+      if (dpCallback) dpCallback(el.dataset.dpDay);
+      closeDatePicker();
+    });
+  });
+}
+document.getElementById('dpPrev').addEventListener('click', () => {
+  dpCurrentDate.setMonth(dpCurrentDate.getMonth() - 1);
+  renderDatePickerGrid();
+});
+document.getElementById('dpNext').addEventListener('click', () => {
+  dpCurrentDate.setMonth(dpCurrentDate.getMonth() + 1);
+  renderDatePickerGrid();
+});
+document.getElementById('dpClose').addEventListener('click', closeDatePicker);
+document.getElementById('dpClear').addEventListener('click', () => {
+  if (dpCallback) dpCallback('');
+  closeDatePicker();
+});
+document.getElementById('dpToday').addEventListener('click', () => {
+  if (dpCallback) dpCallback(todayISO());
+  closeDatePicker();
+});
+document.getElementById('datePickerModal').addEventListener('click', (e) => {
+  if (e.target.id === 'datePickerModal') closeDatePicker();
+});
+
+// Wire the goal-form deadline field
+document.getElementById('goalDeadline').addEventListener('click', () => {
+  const inp = document.getElementById('goalDeadline');
+  openDatePicker(inp.value, (iso) => { inp.value = iso; }, 'Deadline');
+});
+
+/* ============================================================
+   Goals (savings tracker)
+============================================================ */
+function goalSaved(goalId) {
+  return db.goalContributions
+    .filter(c => c.goalId === goalId)
+    .reduce((s, c) => s + (+c.amount || 0), 0);
+}
+
+function renderGoals() {
+  const el = document.getElementById('goalList');
+  if (!db.goals.length) {
+    el.innerHTML = '<div class="empty" style="padding:24px 12px">No goals yet. Add one above to start tracking your savings — travel, emergency fund, gift, whatever you like.</div>';
+    return;
+  }
+  const today = todayISO();
+  el.innerHTML = db.goals.map(g => {
+    const saved = goalSaved(g.id);
+    const remaining = Math.max(0, g.target - saved);
+    const pct = g.target > 0 ? Math.min(100, saved / g.target * 100) : 0;
+    const done = saved >= g.target && g.target > 0;
+
+    let deadlineHTML = '';
+    if (g.deadline) {
+      const daysLeft = Math.round((parseISO(g.deadline) - parseISO(today)) / 86400000);
+      let cls = ''; let text = '';
+      if (daysLeft < 0)         { cls = 'danger';  text = `Overdue by ${-daysLeft}d`; }
+      else if (daysLeft === 0)  { cls = 'warning'; text = 'Due today'; }
+      else if (daysLeft <= 30)  { cls = 'warning'; text = `${daysLeft} days left`; }
+      else                      { cls = '';       text = `${daysLeft} days left`; }
+      deadlineHTML = `<div class="goal-deadline ${cls}">${g.deadline} · ${text}</div>`;
+    }
+
+    return `
+      <div class="goal-card${done ? ' done' : ''}">
+        <div class="goal-head">
+          <div class="goal-title">
+            <span class="goal-icon">${escapeHTML(g.icon || '🎯')}</span>
+            <div style="min-width:0">
+              <div class="goal-name">${escapeHTML(g.name)}</div>
+              <div class="goal-sub">${fmt(saved)} of ${fmt(g.target)}</div>
+              ${deadlineHTML}
+            </div>
+          </div>
+          <div class="goal-pct">${pct.toFixed(0)}%</div>
+        </div>
+        <div class="goal-bar"><span style="width:${pct.toFixed(1)}%"></span></div>
+        <div class="goal-foot">
+          <div class="goal-remaining">${done ? '✓ Goal reached!' : `<b>${fmt(remaining)}</b> left`}</div>
+          <div class="goal-actions">
+            <button class="goal-add" data-goal-add="${g.id}">+ Add ₮</button>
+            <button class="goal-icon-btn" title="History" data-goal-hist="${g.id}">📜</button>
+            <button class="goal-icon-btn" title="Edit"    data-goal-edit="${g.id}">✎</button>
+            <button class="goal-icon-btn" title="Delete"  data-goal-del="${g.id}">✕</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  el.querySelectorAll('[data-goal-add]').forEach(b => b.addEventListener('click', () => openContributeModal(b.dataset.goalAdd)));
+  el.querySelectorAll('[data-goal-edit]').forEach(b => b.addEventListener('click', () => openGoalEditModal(b.dataset.goalEdit)));
+  el.querySelectorAll('[data-goal-hist]').forEach(b => b.addEventListener('click', () => openGoalHistoryModal(b.dataset.goalHist)));
+  el.querySelectorAll('[data-goal-del]').forEach(b => b.addEventListener('click', async () => {
+    const g = db.goals.find(x => x.id === b.dataset.goalDel);
+    if (!g) return;
+    const contribs = db.goalContributions.filter(c => c.goalId === g.id).length;
+    const msg = contribs > 0
+      ? `Delete "${g.name}" and all ${contribs} contribution${contribs === 1 ? '' : 's'}? This cannot be undone.`
+      : `Delete "${g.name}"?`;
+    if (!await confirmDialog(msg, { title: 'Delete Goal' })) return;
+    db.goals = db.goals.filter(x => x.id !== g.id);
+    db.goalContributions = db.goalContributions.filter(c => c.goalId !== g.id);
+    save(); renderGoals();
+  }));
+}
+
+document.getElementById('goalAdd').addEventListener('click', () => {
+  const name = document.getElementById('goalName').value.trim();
+  const target = unmoney(document.getElementById('goalTarget').value);
+  if (!name)   { toast('Enter a name'); return; }
+  if (target <= 0) { toast('Enter a target amount'); return; }
+  const icon = document.getElementById('goalIcon').value.trim() || '🎯';
+  const deadline = document.getElementById('goalDeadline').value || null;
+  const notes = document.getElementById('goalNotes').value.trim();
+  db.goals.push({ id: uid(), name, target, icon, deadline, notes, createdDate: todayISO() });
+  save();
+  document.getElementById('goalName').value = '';
+  document.getElementById('goalTarget').value = '';
+  document.getElementById('goalDeadline').value = '';
+  document.getElementById('goalNotes').value = '';
+  document.getElementById('goalIcon').value = '🎯';
+  renderGoals();
+  toast('Goal added');
+});
+
+/* Contribution modal (reuses editModal DOM) */
+function openContributeModal(goalId) {
+  resetEditModalButtons();
+  const g = db.goals.find(x => x.id === goalId);
+  if (!g) return;
+  editCtx = { kind: 'contribution', goalId };
+  document.getElementById('editModalTitle').textContent = `Add to ${g.name}`;
+  document.getElementById('editModalBody').innerHTML = `
+    <div class="helper" style="margin-bottom:8px">
+      Current: <b>${fmt(goalSaved(g.id))}</b> of ${fmt(g.target)} — <b>${fmt(Math.max(0, g.target - goalSaved(g.id)))}</b> left
+    </div>
+    <label>Date</label><input type="date" id="mDate" value="${todayISO()}" />
+    <label>Amount (₮)</label><input type="text" id="mAmount" class="money-input" inputmode="numeric" autocomplete="off" placeholder="0" />
+    <label>Notes</label><textarea id="mNotes" placeholder="Optional..."></textarea>
+  `;
+  const mAmount = document.getElementById('mAmount');
+  mAmount.addEventListener('input', () => formatMoneyInput(mAmount));
+  formatMoneyInput(mAmount);
+  document.getElementById('editModal').classList.add('show');
+  setTimeout(() => mAmount.focus(), 100);
+}
+
+/* Edit goal modal (reuses editModal DOM) */
+function openGoalEditModal(goalId) {
+  resetEditModalButtons();
+  const g = db.goals.find(x => x.id === goalId);
+  if (!g) return;
+  editCtx = { kind: 'goal', goalId };
+  document.getElementById('editModalTitle').textContent = 'Edit Goal';
+  document.getElementById('editModalBody').innerHTML = `
+    <div class="row-inline" style="gap:8px;align-items:flex-end">
+      <div style="flex:0 0 70px">
+        <label style="margin-top:0">Icon</label>
+        <input type="text" id="mGoalIcon" maxlength="2" value="${escapeHTML(g.icon || '🎯')}" style="text-align:center;font-size:22px" />
+      </div>
+      <div style="flex:1">
+        <label style="margin-top:0">Name</label>
+        <input type="text" id="mGoalName" value="${escapeHTML(g.name)}" autocomplete="off" />
+      </div>
+    </div>
+    <label>Target Amount (₮)</label>
+    <input type="text" id="mGoalTarget" class="money-input" inputmode="numeric" autocomplete="off" value="${g.target}" />
+    <label>Deadline (optional)</label>
+    <input type="text" id="mGoalDeadline" readonly placeholder="📅 Tap to choose date" style="cursor: pointer;" value="${g.deadline || ''}" />
+    <label>Notes</label>
+    <textarea id="mGoalNotes">${escapeHTML(g.notes || '')}</textarea>
+  `;
+  const mAmount = document.getElementById('mGoalTarget');
+  mAmount.addEventListener('input', () => formatMoneyInput(mAmount));
+  formatMoneyInput(mAmount);
+  const mDl = document.getElementById('mGoalDeadline');
+  mDl.addEventListener('click', () => openDatePicker(mDl.value, (iso) => { mDl.value = iso; }, 'Deadline'));
+  document.getElementById('editModal').classList.add('show');
+}
+
+/* Contributions history modal */
+function openGoalHistoryModal(goalId) {
+  const g = db.goals.find(x => x.id === goalId);
+  if (!g) return;
+  editCtx = { kind: 'goal-history', goalId };
+  const contribs = db.goalContributions
+    .filter(c => c.goalId === goalId)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  document.getElementById('editModalTitle').textContent = `${g.icon || '🎯'} ${g.name} — History`;
+  const total = contribs.reduce((s, c) => s + (+c.amount || 0), 0);
+  const list = contribs.length
+    ? contribs.map(c => `
+        <div class="list-item">
+          <div>
+            <div><b>${fmt(c.amount)}</b></div>
+            <div class="meta">${c.date}${c.notes ? ' · <span class="note">' + escapeHTML(c.notes) + '</span>' : ''}</div>
+          </div>
+          <div class="actions">
+            <button title="Delete" data-del-contrib="${c.id}">✕</button>
+          </div>
+        </div>
+      `).join('')
+    : '<div class="empty">No contributions yet.</div>';
+  document.getElementById('editModalBody').innerHTML = `
+    <div class="helper" style="margin-bottom:12px">
+      Total contributed: <b>${fmt(total)}</b> across ${contribs.length} entr${contribs.length === 1 ? 'y' : 'ies'}
+    </div>
+    ${list}
+  `;
+  // Hide the Save button on history view — only Cancel/Close makes sense
+  document.getElementById('editModalSave').style.display = 'none';
+  document.getElementById('editModalCancel').textContent = 'Close';
+
+  document.querySelectorAll('#editModalBody [data-del-contrib]').forEach(b => b.addEventListener('click', async () => {
+    if (!await confirmDialog('Delete this contribution?', { title: 'Delete Contribution' })) return;
+    db.goalContributions = db.goalContributions.filter(c => c.id !== b.dataset.delContrib);
+    save();
+    openGoalHistoryModal(goalId); // refresh
+    renderGoals();
+  }));
+  document.getElementById('editModal').classList.add('show');
+}
+
+/* ============================================================
    Edit modal (Income / Expense)
 ============================================================ */
 let editCtx = null; // { kind: 'income' | 'actual' | 'planned', id }
 
+function resetEditModalButtons() {
+  document.getElementById('editModalSave').style.display = '';
+  document.getElementById('editModalSave').textContent = 'Save';
+  document.getElementById('editModalCancel').textContent = 'Cancel';
+}
+
 function openEditModal(kind, id) {
+  resetEditModalButtons();
   const source = kind === 'income' ? db.income : (kind === 'actual' ? db.actual : db.planned);
   const item = source.find(x => x.id === id);
   if (!item) return;
@@ -2099,6 +2475,42 @@ document.getElementById('editModal').addEventListener('click', (e) => {
 
 document.getElementById('editModalSave').addEventListener('click', () => {
   if (!editCtx) return;
+
+  // --- Goal edit ---
+  if (editCtx.kind === 'goal') {
+    const g = db.goals.find(x => x.id === editCtx.goalId);
+    if (!g) return;
+    const name = document.getElementById('mGoalName').value.trim();
+    const target = unmoney(document.getElementById('mGoalTarget').value);
+    if (!name)       { toast('Name cannot be empty'); return; }
+    if (target <= 0) { toast('Target must be greater than zero'); return; }
+    g.name = name;
+    g.target = target;
+    g.icon = document.getElementById('mGoalIcon').value.trim() || '🎯';
+    g.deadline = document.getElementById('mGoalDeadline').value || null;
+    g.notes = document.getElementById('mGoalNotes').value.trim();
+    save(); renderGoals();
+    closeEditModal();
+    toast('Goal updated');
+    return;
+  }
+
+  // --- Add contribution to goal ---
+  if (editCtx.kind === 'contribution') {
+    const date = document.getElementById('mDate').value || todayISO();
+    const amount = unmoney(document.getElementById('mAmount').value);
+    if (amount <= 0) { toast('Enter a valid amount'); return; }
+    const notes = document.getElementById('mNotes').value.trim();
+    db.goalContributions.push({
+      id: uid(), goalId: editCtx.goalId, date, amount, notes
+    });
+    save(); renderGoals();
+    closeEditModal();
+    toast('Contribution added');
+    return;
+  }
+
+  // --- Income / Expense edit (original) ---
   const date = document.getElementById('mDate').value || todayISO();
   const amount = unmoney(document.getElementById('mAmount').value);
   if (amount <= 0) { toast('Enter a valid amount'); return; }
