@@ -372,6 +372,38 @@
 
   /* Category dot in day-detail rows */
   .cat-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+
+  /* Calendar heatmap */
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
+  .cal-nav .cal-month { font-weight: 700; font-size: 15px; flex: 1; text-align: center; }
+  .cal-nav button { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 16px; color: var(--text); font-weight: 600; }
+  .cal-nav button:hover { background: var(--border); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-wkday { text-align: center; font-size: 10px; color: var(--text-2); font-weight: 700; padding: 4px 0; text-transform: uppercase; letter-spacing: .5px; }
+  .cal-cell {
+    aspect-ratio: 1 / 1; min-height: 44px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 4px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    cursor: pointer; position: relative; overflow: hidden;
+    user-select: none;
+  }
+  .cal-cell::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--primary);
+    opacity: var(--intensity, 0);
+    pointer-events: none;
+  }
+  .cal-cell > * { position: relative; z-index: 1; }
+  .cal-cell.empty { background: transparent; border-color: transparent; cursor: default; }
+  .cal-cell.today { border-color: var(--primary); border-width: 2px; padding: 2px 3px; }
+  .cal-cell.selected { box-shadow: 0 0 0 3px rgba(37, 99, 235, .3); }
+  .cal-cell .cal-day { font-size: 11px; font-weight: 700; color: var(--text-2); line-height: 1; }
+  .cal-cell .cal-val { font-size: 10px; font-weight: 700; color: var(--text); line-height: 1.1; word-break: break-all; }
+  .cal-legend { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--text-2); margin-top: 8px; justify-content: flex-end; }
+  .cal-legend .swatch { width: 12px; height: 12px; border-radius: 3px; background: var(--primary); border: 1px solid var(--border); }
   .barchart .col .lbl { font-size: 10px; color: var(--text-2); font-weight: 600; margin-top: 2px; }
   .barchart .col .val-inc { font-size: 9px; line-height: 1.2; color: var(--success); font-weight: 700; }
   .barchart .col .val-exp { font-size: 9px; line-height: 1.2; color: var(--danger); font-weight: 600; }
@@ -614,6 +646,18 @@
     <h3>Daily Breakdown <span id="dailyRangeLbl" style="font-weight:400;color:var(--text-2);font-size:12px"></span></h3>
     <div id="dailyStackChart"></div>
     <div class="helper" style="margin-top:8px">Tap a day to see its breakdown below.</div>
+  </div>
+
+  <div class="card">
+    <h3>Calendar View</h3>
+    <div class="cal-nav">
+      <button id="calPrev" aria-label="Previous month">◀</button>
+      <div class="cal-month" id="calMonthLbl">Month Year</div>
+      <button id="calNext" aria-label="Next month">▶</button>
+    </div>
+    <div id="calGrid" class="cal-grid"></div>
+    <div class="cal-legend">Less <span class="swatch" style="opacity:.15"></span><span class="swatch" style="opacity:.4"></span><span class="swatch" style="opacity:.7"></span><span class="swatch" style="opacity:.95"></span> More</div>
+    <div class="helper" style="margin-top:4px">Shows current mode (Actual or Planned). Tap a day for details.</div>
   </div>
 
   <div class="card" id="dayDetailCard" style="display:none">
@@ -1740,6 +1784,7 @@ function categoryColor(id) {
 let dailyMode = 'actual';
 let dailyExcluded = new Set();      // category IDs excluded from chart
 let dailySelectedDate = null;       // ISO date of currently-selected bar
+let calDate = (() => { const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d; })();
 
 // Mode toggle
 document.querySelectorAll('.segmented button[data-daily-mode]').forEach(b => {
@@ -1769,8 +1814,68 @@ function renderDaily() {
   const { from, to } = getRange('daily');
   renderDailyChips();
   drawDailyStackedChart(from, to);
+  renderCalendar();
   renderDaySelected();
 }
+
+function renderCalendar() {
+  const source = dailyMode === 'actual' ? db.actual : db.planned;
+  const y = calDate.getFullYear();
+  const m = calDate.getMonth();
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const firstWeekday = new Date(y, m, 1).getDay(); // 0 = Sun
+
+  const cells = [];
+  for (let i = 0; i < firstWeekday; i++) cells.push({ empty: true });
+  for (let d = 1; d <= daysInMonth; d++) {
+    const iso = toLocalISO(new Date(y, m, d));
+    const total = source
+      .filter(x => x.date === iso && !dailyExcluded.has(x.categoryId))
+      .reduce((s, x) => s + (+x.amount || 0), 0);
+    cells.push({ day: d, iso, total });
+  }
+  while (cells.length % 7 !== 0) cells.push({ empty: true });
+
+  const rawMax = Math.max(0, ...cells.filter(c => !c.empty).map(c => c.total));
+  const axisMax = rawMax > 0 ? niceCeil(rawMax) : 1;
+  const today = todayISO();
+
+  document.getElementById('calMonthLbl').textContent = `${monthNames[m]} ${y}`;
+
+  const weekdaysHTML = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+    .map(d => `<div class="cal-wkday">${d}</div>`).join('');
+
+  const cellsHTML = cells.map(c => {
+    if (c.empty) return `<div class="cal-cell empty"></div>`;
+    const opacity = c.total > 0 ? Math.max(0.15, Math.min(0.95, c.total / axisMax * 0.95)) : 0;
+    const isToday = c.iso === today;
+    const isSel   = c.iso === dailySelectedDate;
+    const cls = 'cal-cell' + (isToday ? ' today' : '') + (isSel ? ' selected' : '');
+    return `<div class="${cls}" style="--intensity:${opacity.toFixed(2)}" data-cal-day="${c.iso}" title="${c.iso}: ${fmt(c.total)}">
+      <div class="cal-day">${c.day}</div>
+      ${c.total > 0 ? `<div class="cal-val">${fmtCompact(c.total)}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('calGrid').innerHTML = weekdaysHTML + cellsHTML;
+
+  document.querySelectorAll('#calGrid [data-cal-day]').forEach(el => {
+    el.addEventListener('click', () => {
+      const d = el.dataset.calDay;
+      dailySelectedDate = (dailySelectedDate === d) ? null : d;
+      renderDaily();
+    });
+  });
+}
+
+document.getElementById('calPrev').addEventListener('click', () => {
+  calDate.setMonth(calDate.getMonth() - 1);
+  renderCalendar();
+});
+document.getElementById('calNext').addEventListener('click', () => {
+  calDate.setMonth(calDate.getMonth() + 1);
+  renderCalendar();
+});
 
 function renderDailyChips() {
   const container = document.getElementById('dailyChips');
