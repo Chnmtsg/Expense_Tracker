@@ -763,14 +763,26 @@
   </div>
 
   <div class="card">
-    <h3>Data</h3>
-    <div class="row-actions" style="flex-wrap:wrap; gap:8px;">
-      <button class="secondary" id="btnExport">⬇ Export JSON</button>
-      <button class="secondary" id="btnImport">⬆ Import JSON</button>
-      <button class="danger" id="btnReset">🗑 Reset All</button>
+    <h3>Storage Status</h3>
+    <div id="storageStatus" style="font-size:13px;line-height:1.6;color:var(--text-2)">Checking…</div>
+    <div class="helper" style="margin-top:8px">
+      Mobile browsers (especially iOS Safari) can clear PWA data after long inactivity or when storage is tight.
+      Grant persistent storage above and export a backup regularly.
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Backup &amp; Restore</h3>
+    <button class="primary" id="btnExport">⬇ Backup Now (Export JSON)</button>
+    <div class="row-actions" style="flex-wrap:wrap; gap:8px; margin-top:8px;">
+      <button class="secondary" id="btnImport" style="flex:1">⬆ Restore from File</button>
+      <button class="danger" id="btnReset" style="flex:1">🗑 Reset All</button>
     </div>
     <input type="file" id="importFile" accept=".json" style="display:none" />
-    <div class="helper" style="margin-top:8px">Your data lives only in this browser. Export regularly as backup.</div>
+    <div class="helper" style="margin-top:8px">
+      💡 Save the exported file to Google Drive, iCloud, email, or Telegram Saved Messages.
+      If your phone ever clears the app data, tap Restore and pick that file.
+    </div>
   </div>
 
   <div class="card">
@@ -904,6 +916,46 @@ function load() {
   return d;
 }
 function save() { localStorage.setItem(KEY, JSON.stringify(db)); }
+
+// Ask the browser to make our storage persistent so it isn't evicted
+// during background cleanup or long inactivity (especially iOS Safari).
+async function ensurePersistentStorage() {
+  if (!navigator.storage || !navigator.storage.persist) return false;
+  try {
+    const already = await navigator.storage.persisted();
+    if (already) return true;
+    return await navigator.storage.persist();
+  } catch { return false; }
+}
+ensurePersistentStorage();
+
+async function updateStorageStatus() {
+  const el = document.getElementById('storageStatus');
+  if (!el) return;
+  const parts = [];
+  const persistOK = await (navigator.storage?.persisted?.() ?? false);
+  parts.push(persistOK
+    ? '<span style="color:var(--success)">✓ Persistent storage granted</span> — data survives browser cleanup.'
+    : '<span style="color:var(--warning)">⚠ Persistent storage NOT granted</span> — data may be cleared by the browser.');
+  if (navigator.storage?.estimate) {
+    try {
+      const est = await navigator.storage.estimate();
+      const used = ((est.usage || 0) / 1024).toFixed(1);
+      const quota = ((est.quota || 0) / 1024 / 1024).toFixed(0);
+      parts.push(`Used: <b>${used} KB</b> of ~${quota} MB quota`);
+    } catch {}
+  }
+  const rawSize = (localStorage.getItem(KEY) || '').length;
+  parts.push(`Your data: <b>${(rawSize / 1024).toFixed(1)} KB</b>`);
+  parts.push(`<button class="secondary chip-mini" id="btnRequestPersist" style="margin-top:8px">Request Persistent Storage Again</button>`);
+  el.innerHTML = parts.join('<br>');
+  const btn = document.getElementById('btnRequestPersist');
+  if (btn) btn.addEventListener('click', async () => {
+    const ok = await ensurePersistentStorage();
+    toast(ok ? 'Persistent storage granted' : 'Browser did not grant persistence — install as PWA and try again');
+    updateStorageStatus();
+  });
+}
 
 /* ============================================================
    Utils
@@ -1543,6 +1595,7 @@ function initCategoryReorder() {
 function renderSettings() {
   renderCategoryList();
   renderIncomeTypeList();
+  updateStorageStatus();
 }
 
 function renderCategoryList() {
