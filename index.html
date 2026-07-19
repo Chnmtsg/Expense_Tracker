@@ -157,6 +157,35 @@
     display: inline-flex; align-items: center; justify-content: center;
     cursor: pointer; font-size: 18px;
   }
+  .icon-btn .badge {
+    position: absolute; top: -4px; right: -4px;
+    background: var(--danger); color: white;
+    border-radius: 999px; font-size: 10px; font-weight: 700;
+    padding: 0 5px; min-width: 18px; height: 18px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 2px solid var(--surface);
+  }
+
+  .notif-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 12px; border-radius: 10px; margin-bottom: 8px;
+    border: 1px solid var(--border); background: var(--surface-2);
+  }
+  .notif-item.urgent { border-color: var(--danger); background: rgba(239,68,68,.05); }
+  .notif-item.soon   { border-color: var(--warning); }
+  .notif-item .notif-icon { font-size: 22px; flex-shrink: 0; }
+  .notif-item .notif-body { flex: 1; min-width: 0; }
+  .notif-item .notif-title { font-weight: 700; font-size: 14px; }
+  .notif-item .notif-sub { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+  .notif-item .notif-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .notif-item .notif-actions button {
+    background: var(--primary); color: white; border: none;
+    padding: 6px 10px; border-radius: 6px; font-size: 12px;
+    cursor: pointer; font-weight: 600;
+  }
+  .notif-item .notif-actions button.secondary {
+    background: var(--surface); color: var(--text-2); border: 1px solid var(--border);
+  }
   main { padding: 16px; max-width: 720px; margin: 0 auto; }
   .screen { display: none; }
   .screen.active { display: block; animation: fade .2s ease; }
@@ -243,8 +272,17 @@
   .cat-edit input { padding: 6px 8px; font-size: 14px; flex: 1; min-width: 0; }
   .cat-edit select { padding: 6px 8px; font-size: 14px; width: auto; min-width: 90px; }
 
-  .list-item.draggable-row { touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
+  .list-item.draggable-row,
+  .list-item.draggable-row * {
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  .list-item.draggable-row { cursor: grab; }
   .list-item.draggable-row:active { cursor: grabbing; }
+  /* Keep buttons interactive — taps still fire, they just don't allow scroll gestures */
+  .list-item.draggable-row button { touch-action: manipulation; }
   .list-item.dragging {
     position: relative; z-index: 10;
     box-shadow: 0 12px 28px rgba(0,0,0,.25);
@@ -380,20 +418,34 @@
   /* Goals */
   .goal-card {
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 14px;
-    box-shadow: var(--shadow); margin-bottom: 12px;
+    border-radius: var(--radius); padding: 16px;
+    box-shadow: var(--shadow); margin-bottom: 14px;
   }
   .goal-card.done { border-color: var(--success); background: linear-gradient(to right, rgba(16, 185, 129, .06), transparent); }
-  .goal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-  .goal-title { display: flex; gap: 10px; align-items: center; flex: 1; min-width: 0; }
-  .goal-icon { font-size: 26px; flex-shrink: 0; }
-  .goal-name { font-weight: 700; font-size: 15px; }
-  .goal-sub { font-size: 12px; color: var(--text-2); margin-top: 2px; }
-  .goal-pct { font-size: 18px; font-weight: 800; color: var(--primary); flex-shrink: 0; }
+  .goal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .goal-title { display: flex; gap: 12px; align-items: flex-start; flex: 1; min-width: 0; }
+  .goal-icon { font-size: 32px; flex-shrink: 0; line-height: 1; }
+  .goal-name { font-weight: 800; font-size: 17px; color: var(--text); line-height: 1.2; }
+  .goal-numbers { font-size: 13px; margin-top: 4px; }
+  .goal-numbers .saved  { color: var(--primary); font-weight: 700; }
+  .goal-numbers .of     { color: var(--text-2); }
+  .goal-numbers .target { color: var(--text); font-weight: 600; }
+  .goal-pct { font-size: 22px; font-weight: 800; color: var(--primary); flex-shrink: 0; line-height: 1; }
   .goal-card.done .goal-pct { color: var(--success); }
+  .goal-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .goal-meta-item {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: 999px;
+    background: var(--surface-2); color: var(--text-2);
+    border: 1px solid var(--border);
+  }
+  .goal-meta-item.deadline-warning { background: rgba(245, 158, 11, .12); color: var(--warning); border-color: rgba(245, 158, 11, .3); }
+  .goal-meta-item.deadline-danger  { background: rgba(239, 68, 68, .12); color: var(--danger);  border-color: rgba(239, 68, 68, .3); }
+  .goal-meta-item.recurring        { background: rgba(37, 99, 235, .10); color: var(--primary); border-color: rgba(37, 99, 235, .25); }
   .goal-bar {
     height: 10px; background: var(--surface-2);
-    border-radius: 5px; overflow: hidden; margin-bottom: 10px;
+    border-radius: 5px; overflow: hidden; margin-bottom: 12px;
   }
   .goal-bar > span {
     display: block; height: 100%; background: var(--primary);
@@ -401,23 +453,89 @@
   }
   .goal-card.done .goal-bar > span { background: var(--success); }
   .goal-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .goal-remaining { font-size: 13px; color: var(--text); font-weight: 500; }
+  .goal-remaining { font-size: 14px; color: var(--text-2); }
+  .goal-remaining b { color: var(--text); font-size: 15px; font-weight: 800; }
+  .goal-card.done .goal-remaining { color: var(--success); font-weight: 700; font-size: 15px; }
   .goal-actions { display: flex; gap: 6px; }
   .goal-actions button.goal-add {
     background: var(--primary); color: white; border: none;
-    padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 700;
     cursor: pointer;
   }
   .goal-actions button.goal-add:hover { background: var(--primary-2); }
   .goal-actions button.goal-icon-btn {
     background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
-    width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 14px;
+    width: 34px; height: 34px; border-radius: 10px; cursor: pointer; font-size: 14px;
     padding: 0; display: inline-flex; align-items: center; justify-content: center;
   }
   .goal-actions button.goal-icon-btn:hover { background: var(--border); }
-  .goal-deadline { font-size: 12px; color: var(--text-2); }
-  .goal-deadline.warning { color: var(--warning); font-weight: 600; }
-  .goal-deadline.danger  { color: var(--danger);  font-weight: 600; }
+
+  .goal-quote {
+    font-size: 12.5px; font-style: italic;
+    color: var(--text); line-height: 1.4;
+    padding: 8px 12px; margin-bottom: 12px;
+    background: var(--surface-2);
+    border-left: 3px solid var(--primary);
+    border-radius: 6px;
+    position: relative;
+  }
+  .goal-card.done .goal-quote { border-left-color: var(--success); background: rgba(16,185,129,.07); }
+  .goal-quote.overdue { border-left-color: var(--danger); background: rgba(239,68,68,.06); }
+  .goal-quote .qicon { margin-right: 4px; }
+
+  /* Icon picker grid */
+  .icon-grid {
+    display: none; grid-template-columns: repeat(8, 1fr); gap: 6px;
+    margin-top: 6px; margin-bottom: 8px;
+    padding: 10px; background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 12px;
+    animation: iconGridSlide .18s ease;
+  }
+  .icon-grid.open { display: grid; }
+  @keyframes iconGridSlide { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+  @media (max-width: 480px) { .icon-grid { grid-template-columns: repeat(6, 1fr); } }
+  .icon-grid button {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 6px; font-size: 22px; cursor: pointer;
+    aspect-ratio: 1 / 1; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color .12s, transform .05s;
+  }
+  .icon-grid button:hover  { border-color: var(--primary); }
+  .icon-grid button:active { transform: scale(.94); }
+  .icon-grid button.selected {
+    border-color: var(--primary); background: rgba(37,99,235,.12);
+    box-shadow: 0 0 0 2px rgba(37,99,235,.2);
+  }
+
+  /* Quick amount buttons */
+  .qa-row { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; align-items: center; }
+  .qa-btn {
+    background: var(--surface-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 8px 16px; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: background .15s, color .15s;
+  }
+  .qa-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+  .qa-edit-btn {
+    background: transparent; color: var(--text-2);
+    border: 1px dashed var(--border); border-radius: 999px;
+    padding: 8px 12px; font-size: 13px; cursor: pointer;
+  }
+  .qa-edit-btn:hover { background: var(--surface-2); color: var(--text); }
+  .qa-inp {
+    width: 90px; padding: 6px 10px; font-size: 13px;
+    border: 1px solid var(--border); border-radius: 999px;
+    background: var(--surface); color: var(--text);
+  }
+  .qa-save {
+    background: var(--success); color: white; border: none;
+    border-radius: 999px; padding: 8px 14px; font-size: 13px; cursor: pointer; font-weight: 700;
+  }
+  .qa-cancel {
+    background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 8px 14px; font-size: 13px; cursor: pointer;
+  }
 
   /* Calendar heatmap */
   .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
@@ -461,6 +579,62 @@
 
   .helper { font-size: 11px; color: var(--text-2); margin-top: 4px; }
   .required-mark { color: var(--danger); font-weight: 700; }
+
+  .convert-btn {
+    background: none; border: none; color: var(--primary);
+    cursor: pointer; font-size: 12px; padding: 6px 0 0 0;
+    text-align: left; font-weight: 600;
+  }
+  .convert-btn:hover { text-decoration: underline; }
+
+  .conv-result {
+    background: var(--surface-2); border-radius: 12px;
+    padding: 18px 14px; margin: 14px 0 6px 0; text-align: center;
+    border: 1px solid var(--border);
+  }
+  .conv-val { font-size: 30px; font-weight: 800; color: var(--primary); line-height: 1.1; word-break: break-all; }
+  .conv-rate-line { font-size: 12px; color: var(--text-2); margin-top: 6px; }
+  .conv-status { font-size: 11px; color: var(--text-2); text-align: center; margin-top: 4px; }
+  .conv-status.warn  { color: var(--warning); }
+  .conv-status.error { color: var(--danger); }
+
+  .cur-btn {
+    width: 100%; padding: 12px; border-radius: 10px;
+    background: var(--surface-2); color: var(--text);
+    border: 1px solid var(--border); cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 15px; text-align: left;
+    transition: border-color .15s, background .15s;
+  }
+  .cur-btn:hover { border-color: var(--primary); }
+  .cur-btn .flag { font-size: 22px; flex-shrink: 0; }
+  .cur-btn .code { font-weight: 700; }
+  .cur-btn .name { flex: 1; color: var(--text-2); font-weight: 400; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cur-btn .chevron { color: var(--text-2); font-size: 10px; }
+
+  .swap-btn-wrap { display: flex; justify-content: center; padding: 6px 0; }
+  .swap-btn {
+    background: var(--primary); color: white; border: none;
+    width: 44px; height: 44px; border-radius: 50%;
+    cursor: pointer; font-size: 20px; font-weight: 700;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, .25);
+    transition: transform .2s, background .15s;
+  }
+  .swap-btn:hover { background: var(--primary-2); }
+  .swap-btn.spinning { transform: rotate(180deg); }
+
+  .cur-pick-list { max-height: 55vh; overflow-y: auto; margin-top: 12px; }
+  .cur-pick-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface); margin-bottom: 4px;
+  }
+  .cur-pick-item:hover { background: var(--surface-2); }
+  .cur-pick-item.active { border-color: var(--primary); background: var(--surface-2); }
+  .cur-pick-item .flag { font-size: 22px; }
+  .cur-pick-item .code { font-weight: 700; font-size: 14px; }
+  .cur-pick-item .name { font-size: 12px; color: var(--text-2); }
+  .cur-pick-empty { text-align: center; color: var(--text-2); font-size: 13px; padding: 20px 0; }
   input.invalid, select.invalid {
     border-color: var(--danger);
     box-shadow: 0 0 0 3px rgba(239, 68, 68, .15);
@@ -478,6 +652,8 @@
     position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 40;
     display: none; align-items: flex-end; justify-content: center;
   }
+  /* Nested pickers must sit above their parent modal so their taps aren't stolen */
+  #currencyPickerModal, #datePickerModal, #themeModal, #confirmModal { z-index: 60; }
   .modal-backdrop.show { display: flex; }
   .modal {
     background: var(--surface); border-radius: 16px 16px 0 0;
@@ -495,7 +671,12 @@
     <h1 id="hdrTitle">Dashboard</h1>
     <div class="sub" id="hdrSub"></div>
   </div>
-  <button class="icon-btn" id="themeBtn" title="Choose theme">🎨</button>
+  <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+    <button class="icon-btn" id="bellBtn" title="Reminders" style="position:relative">
+      🔔<span class="badge" id="bellBadge" style="display:none">0</span>
+    </button>
+    <button class="icon-btn" id="themeBtn" title="Choose theme">🎨</button>
+  </div>
 </header>
 
 <main>
@@ -620,7 +801,10 @@
   <div class="card">
     <h3>Add Income</h3>
     <label>Date</label><input type="date" id="incDate" />
-    <label>Amount (₮)</label><input type="text" id="incAmount" class="money-input" inputmode="numeric" autocomplete="off" placeholder="0" />
+    <label>Amount (₮)</label>
+    <input type="text" id="incAmount" class="money-input" inputmode="numeric" autocomplete="off" placeholder="0" />
+    <div class="qa-row" id="qaRowInc" data-qa-target="incAmount"></div>
+    <button type="button" class="convert-btn" data-conv-target="incAmount">🌍 Convert from foreign currency</button>
     <label>Type</label>
     <select id="incType"></select>
     <div class="helper">Manage types in Settings.</div>
@@ -650,10 +834,33 @@
   <div class="card">
     <h3 id="expFormTitle">Add Actual Expense</h3>
     <label>Date</label><input type="date" id="expDate" />
-    <label>Amount (₮)</label><input type="text" id="expAmount" class="money-input" inputmode="numeric" autocomplete="off" placeholder="0" />
+    <label>Amount (₮)</label>
+    <input type="text" id="expAmount" class="money-input" inputmode="numeric" autocomplete="off" placeholder="0" />
+    <div class="qa-row" id="qaRowExp" data-qa-target="expAmount"></div>
+    <button type="button" class="convert-btn" data-conv-target="expAmount">🌍 Convert from foreign currency</button>
     <label>Category</label>
     <select id="expCategory"></select>
     <div class="helper">Manage categories in Settings.</div>
+
+    <div id="expRecWrap" style="display:none; border-top:1px dashed var(--border); margin-top:12px; padding-top:12px">
+      <label style="margin-top:0;font-weight:600">🔁 Frequency (planned only)</label>
+      <div class="helper" style="margin-top:0;margin-bottom:8px">Repeat this planned expense — e.g. monthly rent. Marking it as Actual auto-advances to the next occurrence.</div>
+      <select id="expRecFreq">
+        <option value="">None (one-time)</option>
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+        <option value="monthly">Monthly</option>
+        <option value="custom">Custom (every N days)</option>
+      </select>
+      <div id="expRecCustomWrap" style="display:none">
+        <label>Every N days</label>
+        <input type="text" id="expRecInterval" inputmode="numeric" value="14" />
+      </div>
+      <label>End date (optional)</label>
+      <input type="text" id="expRecEnd" readonly placeholder="📅 Tap — leave empty for unlimited" style="cursor: pointer;" />
+      <div class="helper">If set, the schedule stops automatically after this date.</div>
+    </div>
+
     <label>Notes</label><textarea id="expNotes" placeholder="Optional..."></textarea>
     <button class="primary" id="expAdd">➕ Add Expense</button>
   </div>
@@ -695,7 +902,7 @@
   </div>
 
   <div class="card">
-    <h3>Calendar View</h3>
+    <h3>Calendar View — <span id="calModeLbl" style="font-weight:800;color:var(--primary)">Actual</span></h3>
     <div class="cal-nav">
       <button id="calPrev" aria-label="Previous month">◀</button>
       <div class="cal-month" id="calMonthLbl">Month Year</div>
@@ -703,7 +910,7 @@
     </div>
     <div id="calGrid" class="cal-grid"></div>
     <div class="cal-legend">Less <span class="swatch" style="opacity:.15"></span><span class="swatch" style="opacity:.4"></span><span class="swatch" style="opacity:.7"></span><span class="swatch" style="opacity:.95"></span> More</div>
-    <div class="helper" style="margin-top:4px">Shows current mode (Actual or Planned). Tap a day for details.</div>
+    <div class="helper" style="margin-top:4px">Switch mode with the Actual / Planned toggle at the top. Tap a day for details.</div>
   </div>
 
   <div class="card" id="dayDetailCard" style="display:none">
@@ -726,12 +933,37 @@
         <input type="text" id="goalName" placeholder="e.g. Travel to Japan" autocomplete="off" />
       </div>
     </div>
+    <div class="icon-grid" id="goalIconGrid"></div>
     <label>Target Amount (₮) <span class="required-mark">*</span></label>
     <input type="text" id="goalTarget" class="money-input" inputmode="numeric" autocomplete="off" placeholder="0" />
     <label>Deadline (optional)</label>
     <input type="text" id="goalDeadline" readonly placeholder="📅 Tap to choose date" style="cursor: pointer;" />
     <label>Notes (optional)</label>
     <textarea id="goalNotes" placeholder="e.g. Tokyo trip Sep 2027..."></textarea>
+
+    <div style="border-top:1px dashed var(--border); margin-top:14px; padding-top:12px">
+      <label style="margin-top:0;font-weight:600">🔁 Auto-contribution schedule (optional)</label>
+      <div class="helper" style="margin-top:0;margin-bottom:8px">Get reminded to add money on a schedule — daily, weekly, monthly, or every N days.</div>
+      <label>Frequency</label>
+      <select id="goalRecFreq">
+        <option value="">None</option>
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+        <option value="monthly">Monthly</option>
+        <option value="custom">Custom (every N days)</option>
+      </select>
+      <div id="goalRecFields" style="display:none">
+        <div id="goalRecCustomWrap" style="display:none">
+          <label>Every N days</label>
+          <input type="text" id="goalRecInterval" inputmode="numeric" value="14" />
+        </div>
+        <label>Amount per contribution (₮)</label>
+        <input type="text" id="goalRecAmount" class="money-input" inputmode="numeric" autocomplete="off" placeholder="0" />
+        <label>First contribution date</label>
+        <input type="text" id="goalRecStart" readonly placeholder="📅 Tap to choose date" style="cursor: pointer;" />
+      </div>
+    </div>
+
     <button class="primary" id="goalAdd">➕ Add Goal</button>
   </div>
 
@@ -760,6 +992,26 @@
     <label>New Income Type Name</label>
     <input type="text" id="newIncomeTypeName" placeholder="e.g. Bonus" />
     <button class="primary" id="incomeTypeAdd">➕ Add Income Type</button>
+  </div>
+
+  <div class="card">
+    <h3>🔔 Notifications</h3>
+    <div id="notifPrefs" style="font-size:13px"></div>
+  </div>
+
+  <div class="card">
+    <h3>☁️ Cloud Sync (Firebase)</h3>
+    <div id="cloudStatus" style="font-size:13px;line-height:1.6;color:var(--text-2);margin-bottom:12px">Checking…</div>
+    <div id="cloudActions"></div>
+    <div class="helper" style="margin-top:8px">
+      Cloud sync stores your data safely in your Google account. Data survives iOS storage cleanup and syncs across all your devices.
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📊 Data Summary</h3>
+    <div id="dataSummary" style="font-size:13px;line-height:1.7"></div>
+    <div class="helper" style="margin-top:8px">Use the ✕ buttons to force-clear a data type if something feels stuck. Non-reversible — export first.</div>
   </div>
 
   <div class="card">
@@ -825,6 +1077,52 @@
     <button class="close-x" id="themeModalClose" aria-label="Close">×</button>
     <h3>Choose Theme</h3>
     <div id="themeSwatches" class="theme-swatches"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="notifModal">
+  <div class="modal">
+    <button class="close-x" id="notifClose" aria-label="Close">×</button>
+    <h3>🔔 Reminders <span id="notifRangeLbl" style="font-weight:400;color:var(--text-2);font-size:12px"></span></h3>
+    <div id="notifBody" style="max-height:60vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="currencyPickerModal">
+  <div class="modal">
+    <button class="close-x" id="curPickClose" aria-label="Close">×</button>
+    <h3 id="curPickTitle">Select Currency</h3>
+    <input type="text" id="curPickSearch" placeholder="🔍 Search by code or name (e.g. USD, Yen)" autocomplete="off" />
+    <div id="curPickList" class="cur-pick-list"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="converterModal">
+  <div class="modal">
+    <button class="close-x" id="converterClose" aria-label="Close">×</button>
+    <h3>🌍 Currency Converter</h3>
+
+    <label>From</label>
+    <button type="button" id="convFromBtn" class="cur-btn"></button>
+    <label>Amount</label>
+    <input type="text" id="convAmount" inputmode="decimal" autocomplete="off" placeholder="e.g. 25" />
+
+    <div class="swap-btn-wrap">
+      <button type="button" id="convSwap" class="swap-btn" title="Swap currencies" aria-label="Swap">⇅</button>
+    </div>
+
+    <label>To</label>
+    <button type="button" id="convToBtn" class="cur-btn"></button>
+    <div class="conv-result">
+      <div class="conv-val" id="convVal">₮0</div>
+      <div class="conv-rate-line" id="convRateLine">&nbsp;</div>
+    </div>
+
+    <div class="conv-status" id="convStatus">Loading rates…</div>
+    <div style="display:flex; gap:8px; margin-top:16px;">
+      <button class="secondary" id="converterCancel" style="flex:1">Cancel</button>
+      <button class="primary" id="converterUse" style="flex:1; margin-top:0">Use ₮ amount</button>
+    </div>
   </div>
 </div>
 
@@ -899,11 +1197,34 @@ function load() {
         salaries: parsed.salaries || [],
         goals: parsed.goals || [],
         goalContributions: parsed.goalContributions || [],
-        settings: { theme: 'light', ...(parsed.settings || {}) }
+        recurringIncome: parsed.recurringIncome || [],
+        settings: {
+          theme: 'light',
+          notifications: {
+            enabled: true, daysAhead: 7,
+            showPlanned: true, showGoals: true, showRecurring: true,
+            osPermission: 'default',
+            lastNotifiedAt: 0,
+            ...(parsed.settings?.notifications || {})
+          },
+          ...(parsed.settings || {})
+        }
       };
     }
   } catch (e) {}
-  if (!d) d = { income: [], planned: [], actual: [], categories: [...defaultCategories], incomeTypes: [...defaultIncomeTypes], salaries: [], goals: [], goalContributions: [], settings: { theme: 'light' } };
+  if (!d) d = {
+    income: [], planned: [], actual: [], categories: [...defaultCategories],
+    incomeTypes: [...defaultIncomeTypes], salaries: [], goals: [], goalContributions: [],
+    recurringIncome: [],
+    settings: {
+      theme: 'light',
+      notifications: {
+        enabled: true, daysAhead: 7,
+        showPlanned: true, showGoals: true, showRecurring: true,
+        osPermission: 'default', lastNotifiedAt: 0
+      }
+    }
+  };
 
   // Migrate old income entries that stored a `type` string → typeId
   d.income.forEach(item => {
@@ -915,7 +1236,226 @@ function load() {
   });
   return d;
 }
-function save() { localStorage.setItem(KEY, JSON.stringify(db)); }
+/* ============================================================
+   Firebase config — FILL IN AFTER CREATING YOUR PROJECT
+   See setup guide in Settings screen.
+============================================================ */
+const firebaseConfig = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+
+let fbApp = null, fbAuth = null, fbDb = null;
+let currentUser = null;
+let cloudSyncEnabled = false;
+let cloudSyncBusy = false;
+let cloudSyncTimer = null;
+let lastCloudSync = null;
+
+function isFirebaseConfigured() {
+  return firebaseConfig.apiKey && firebaseConfig.apiKey.length > 10 && firebaseConfig.projectId;
+}
+
+function loadFirebaseSDK() {
+  return new Promise((resolve, reject) => {
+    if (window.firebase && window.firebase.firestore) return resolve();
+    const urls = [
+      'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
+      'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js',
+      'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js'
+    ];
+    let idx = 0;
+    const loadOne = () => {
+      if (idx >= urls.length) return resolve();
+      const s = document.createElement('script');
+      s.src = urls[idx++];
+      s.onload = loadOne;
+      s.onerror = () => reject(new Error('Failed to load ' + s.src));
+      document.head.appendChild(s);
+    };
+    loadOne();
+  });
+}
+
+async function initFirebase() {
+  if (!isFirebaseConfigured()) return;
+  try {
+    await loadFirebaseSDK();
+    fbApp  = firebase.initializeApp(firebaseConfig);
+    fbAuth = firebase.auth();
+    fbDb   = firebase.firestore();
+    cloudSyncEnabled = true;
+    fbAuth.onAuthStateChanged(async (user) => {
+      currentUser = user;
+      updateCloudUI();
+      if (user) await loadFromCloud();
+    });
+  } catch (e) {
+    console.error('Firebase init failed', e);
+  }
+}
+
+async function signInWithGoogle() {
+  if (!fbAuth) return;
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await fbAuth.signInWithPopup(provider);
+  } catch (e) {
+    toast('Sign in failed: ' + (e.code || e.message));
+  }
+}
+
+async function signOut() {
+  if (!fbAuth) return;
+  await fbAuth.signOut();
+  toast('Signed out — local data kept');
+}
+
+async function loadFromCloud() {
+  if (!currentUser || !fbDb) return;
+  try {
+    updateCloudUI('loading');
+    const snap = await fbDb.collection('users').doc(currentUser.uid).get();
+    if (snap.exists) {
+      const cloudDbJson = snap.data().db;
+      if (cloudDbJson) {
+        const localCount = (db.income?.length || 0) + (db.actual?.length || 0) + (db.planned?.length || 0);
+        if (localCount > 0) {
+          const useCloud = await confirmDialog(
+            `Cloud has your data. Replace this device's data with cloud data? Choose Cancel to KEEP local and upload it.`,
+            { title: 'Cloud data found', okLabel: 'Use Cloud', danger: false }
+          );
+          if (!useCloud) { await syncToCloud(); return; }
+        }
+        db = JSON.parse(cloudDbJson);
+        localStorage.setItem(KEY, cloudDbJson);
+        // Re-render everything visible
+        renderDashboard();
+        if (document.querySelector('.screen.active')?.id === 'income') renderIncome();
+        if (document.querySelector('.screen.active')?.id === 'expenses') renderExpenses();
+        if (document.querySelector('.screen.active')?.id === 'goals') renderGoals();
+        if (document.querySelector('.screen.active')?.id === 'settings') renderSettings();
+        if (document.querySelector('.screen.active')?.id === 'daily') renderDaily();
+        toast('Loaded from cloud');
+      }
+    } else {
+      // First sign-in on this account — upload local
+      await syncToCloud();
+      toast('Local data uploaded to cloud');
+    }
+    lastCloudSync = Date.now();
+    updateCloudUI();
+  } catch (e) {
+    console.error(e);
+    toast('Cloud load failed: ' + (e.code || e.message));
+    updateCloudUI();
+  }
+}
+
+async function syncToCloud() {
+  if (!currentUser || !fbDb || cloudSyncBusy) return;
+  cloudSyncBusy = true;
+  updateCloudUI('syncing');
+  try {
+    await fbDb.collection('users').doc(currentUser.uid).set({
+      db: JSON.stringify(db),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    lastCloudSync = Date.now();
+  } catch (e) {
+    console.error(e);
+  } finally {
+    cloudSyncBusy = false;
+    updateCloudUI();
+  }
+}
+
+function scheduleCloudSync() {
+  if (!currentUser || !cloudSyncEnabled) return;
+  clearTimeout(cloudSyncTimer);
+  cloudSyncTimer = setTimeout(() => syncToCloud().catch(() => {}), 1500);
+}
+
+function updateCloudUI(state) {
+  const statusEl  = document.getElementById('cloudStatus');
+  const actionsEl = document.getElementById('cloudActions');
+  if (!statusEl || !actionsEl) return;
+
+  if (!isFirebaseConfigured()) {
+    statusEl.innerHTML = '<span style="color:var(--warning)">⚠ Cloud sync NOT configured</span><br>Follow the setup guide to enable it.';
+    actionsEl.innerHTML = '<button class="secondary" id="btnFirebaseHelp" style="width:100%">📖 How to set up Firebase</button>';
+    document.getElementById('btnFirebaseHelp').addEventListener('click', showFirebaseSetupGuide);
+    return;
+  }
+  if (!currentUser) {
+    statusEl.innerHTML = '<span>Not signed in</span><br>Sign in to sync your data.';
+    actionsEl.innerHTML = '<button class="primary" id="btnSignIn" style="width:100%; margin-top:0">🔐 Sign in with Google</button>';
+    document.getElementById('btnSignIn').addEventListener('click', signInWithGoogle);
+    return;
+  }
+
+  let statusText = `<span style="color:var(--success)">✓ Signed in as <b>${escapeHTML(currentUser.email || 'user')}</b></span>`;
+  if (state === 'loading')      statusText += '<br>⏳ Loading from cloud…';
+  else if (state === 'syncing') statusText += '<br>⏳ Syncing…';
+  else if (lastCloudSync)       statusText += `<br>Last sync: ${new Date(lastCloudSync).toLocaleTimeString()}`;
+  statusEl.innerHTML = statusText;
+
+  actionsEl.innerHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="secondary" id="btnSyncNow" style="flex:1">↻ Sync now</button>
+      <button class="secondary" id="btnLoadCloud" style="flex:1">⬇ Reload from cloud</button>
+      <button class="danger" id="btnSignOut" style="flex:1 1 100%">Sign out</button>
+    </div>
+  `;
+  document.getElementById('btnSyncNow').addEventListener('click', syncToCloud);
+  document.getElementById('btnLoadCloud').addEventListener('click', loadFromCloud);
+  document.getElementById('btnSignOut').addEventListener('click', signOut);
+}
+
+function showFirebaseSetupGuide() {
+  document.getElementById('editModalTitle').textContent = '📖 Firebase Setup Guide';
+  document.getElementById('editModalBody').innerHTML = `
+    <div style="font-size:13px; line-height:1.6; color:var(--text)">
+      <p><b>1. Create a Firebase project</b><br>
+      Go to <code>console.firebase.google.com</code> → sign in with Google → <b>Add project</b> → give it any name → skip Analytics → Create.</p>
+      <p><b>2. Add a Web App</b><br>
+      In the project overview, click the <b>&lt;/&gt;</b> web icon → name it "expense-tracker" → skip Hosting → Register app.<br>
+      <b>Copy the config object shown</b> (looks like <code>{ apiKey: "...", ... }</code>).</p>
+      <p><b>3. Enable Google Sign-In</b><br>
+      Left sidebar → <b>Authentication</b> → <b>Get started</b> → Sign-in method tab → click <b>Google</b> → Enable → Save.</p>
+      <p><b>4. Enable Firestore</b><br>
+      Left sidebar → <b>Firestore Database</b> → Create database → nearest location → <b>Production mode</b> → Create.</p>
+      <p><b>5. Set Firestore rules</b><br>
+      Rules tab → replace with:</p>
+      <pre style="background:var(--surface-2);padding:8px;border-radius:6px;font-size:11px;overflow-x:auto">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}</pre>
+      <p>Click <b>Publish</b>.</p>
+      <p><b>6. Authorize your GitHub Pages domain</b><br>
+      Authentication → Settings → Authorized domains → <b>Add domain</b> → paste your <code>&lt;username&gt;.github.io</code></p>
+      <p><b>7. Paste your config into index.html</b><br>
+      Open <code>index.html</code> in a text editor. Find <code>const firebaseConfig = {</code> near the top of the &lt;script&gt; block, replace the empty values with values from step 2, save, upload to GitHub.</p>
+      <p><b>8. Reload the app → Sign in with Google → done.</b></p>
+    </div>
+  `;
+  document.getElementById('editModalSave').style.display = 'none';
+  document.getElementById('editModalCancel').textContent = 'Close';
+  document.getElementById('editModal').classList.add('show');
+}
+
+function save() {
+  localStorage.setItem(KEY, JSON.stringify(db));
+  scheduleCloudSync();
+}
 
 // Ask the browser to make our storage persistent so it isn't evicted
 // during background cleanup or long inactivity (especially iOS Safari).
@@ -1075,6 +1615,243 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+/* ============================================================
+   Reminders / notifications
+============================================================ */
+function computeNextRecurring(r) {
+  if (!r.startDate) return null;
+  const start = parseISO(r.startDate);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const base = r.lastLogged ? parseISO(r.lastLogged) : new Date(start.getTime() - 86400000);
+  let next = new Date(base);
+  const step = () => {
+    switch (r.frequency) {
+      case 'daily':   next.setDate(next.getDate() + 1); break;
+      case 'weekly':  next.setDate(next.getDate() + 7); break;
+      case 'monthly': next.setMonth(next.getMonth() + 1); break;
+      case 'custom':  next.setDate(next.getDate() + (r.intervalDays || 14)); break;
+      default: return false;
+    }
+    return true;
+  };
+  if (!r.lastLogged) {
+    next = new Date(start);
+    if (next >= today) return toLocalISO(next);
+  } else {
+    if (!step()) return null;
+  }
+  let guard = 0;
+  // Advance until we reach today or later; guard is huge so daily schedules
+  // don't hit a ~1-year cap.
+  while (next < today && guard++ < 20000) { if (!step()) return null; }
+  return toLocalISO(next);
+}
+
+function computeReminders() {
+  const notif = db.settings.notifications || {};
+  if (!notif.enabled) return [];
+  // Keep recurring planned entries current — advance any stale dates first
+  autoAdvancePlannedRecurring();
+  const daysAhead = notif.daysAhead || 7;
+  const today = todayISO();
+  const cutoffDate = new Date(); cutoffDate.setHours(0,0,0,0);
+  cutoffDate.setDate(cutoffDate.getDate() + daysAhead);
+  const cutoff = toLocalISO(cutoffDate);
+  const items = [];
+
+  if (notif.showPlanned) {
+    db.planned.forEach(p => {
+      if (!p.date || p.date > cutoff) return;
+      // Include overdue too
+      const cat = db.categories.find(c => c.id === p.categoryId);
+      const daysUntil = Math.round((parseISO(p.date) - parseISO(today)) / 86400000);
+      items.push({
+        key: 'planned:' + p.id,
+        type: 'planned',
+        icon: cat ? '🧾' : '⚠️',
+        title: `Planned: ${cat?.name || 'Unknown category'}`,
+        sub: `${p.date} · ${fmt(p.amount)}${p.notes ? ' · ' + p.notes : ''}`,
+        daysUntil, date: p.date, urgency: daysUntil <= 1 ? 'urgent' : (daysUntil <= 3 ? 'soon' : ''),
+        data: p
+      });
+    });
+  }
+
+  if (notif.showGoals) {
+    db.goals.forEach(g => {
+      if (!g.deadline) return;
+      if (g.deadline > cutoff) return;
+      const saved = goalSaved(g.id);
+      if (saved >= g.target) return;
+      const daysUntil = Math.round((parseISO(g.deadline) - parseISO(today)) / 86400000);
+      const remaining = g.target - saved;
+      items.push({
+        key: 'goal:' + g.id,
+        type: 'goal',
+        icon: g.icon || '🎯',
+        title: `Goal: ${g.name}`,
+        sub: `${g.deadline} · ${fmt(remaining)} left of ${fmt(g.target)}`,
+        daysUntil, date: g.deadline, urgency: daysUntil <= 3 ? 'urgent' : (daysUntil <= 7 ? 'soon' : ''),
+        data: g
+      });
+    });
+  }
+
+  if (notif.showRecurring) {
+    // Goal auto-contributions
+    db.goals.forEach(g => {
+      if (!g.recFrequency) return;
+      const saved = goalSaved(g.id);
+      if (saved >= g.target) return; // goal reached
+      const goalRecObj = {
+        frequency: g.recFrequency,
+        startDate: g.recStartDate,
+        lastLogged: g.recLastLogged,
+        intervalDays: g.recIntervalDays
+      };
+      const nextDate = computeNextRecurring(goalRecObj);
+      if (!nextDate || nextDate > cutoff) return;
+      const daysUntil = Math.round((parseISO(nextDate) - parseISO(today)) / 86400000);
+      items.push({
+        key: 'goalrec:' + g.id + ':' + nextDate,
+        type: 'goal-recurring',
+        icon: g.icon || '🎯',
+        title: `Contribute to ${g.name}`,
+        sub: `${nextDate} · ${fmt(g.recAmount)}`,
+        daysUntil, date: nextDate,
+        urgency: daysUntil <= 0 ? 'urgent' : (daysUntil <= 3 ? 'soon' : ''),
+        data: g, nextDate
+      });
+    });
+  }
+
+  items.sort((a, b) => a.date.localeCompare(b.date));
+  return items;
+}
+
+function updateBellBadge() {
+  const reminders = computeReminders();
+  const badge = document.getElementById('bellBadge');
+  const btn = document.getElementById('bellBtn');
+  if (!badge || !btn) return;
+  if (reminders.length > 0) {
+    badge.textContent = reminders.length > 9 ? '9+' : String(reminders.length);
+    badge.style.display = '';
+    btn.classList.add('has-notif');
+  } else {
+    badge.style.display = 'none';
+    btn.classList.remove('has-notif');
+  }
+  return reminders;
+}
+
+function openNotifModal() {
+  const reminders = computeReminders();
+  const body = document.getElementById('notifBody');
+  const rangeLbl = document.getElementById('notifRangeLbl');
+  const daysAhead = db.settings.notifications?.daysAhead || 7;
+  rangeLbl.textContent = `(next ${daysAhead} days)`;
+  if (!reminders.length) {
+    body.innerHTML = '<div class="empty" style="padding:24px 12px">Nothing due in the next ' + daysAhead + ' days. 🎉</div>';
+  } else {
+    body.innerHTML = reminders.map(r => {
+      const relLbl = r.daysUntil < 0 ? `Overdue ${-r.daysUntil}d` : (r.daysUntil === 0 ? 'Today' : `In ${r.daysUntil}d`);
+      let actionsHTML = '';
+      if (r.type === 'planned') {
+        actionsHTML = `
+          <button data-convert-planned="${r.data.id}">→ Mark as Actual</button>`;
+      } else if (r.type === 'goal') {
+        actionsHTML = `
+          <button data-goal-add="${r.data.id}">+ Add to goal</button>`;
+      } else if (r.type === 'goal-recurring') {
+        actionsHTML = `
+          <button data-log-goalrec="${r.data.id}" data-next-date="${r.nextDate}">✓ Add ${fmt(r.data.recAmount)}</button>
+          <button class="secondary" data-goal-add="${r.data.id}">Custom amount</button>`;
+      }
+      return `
+        <div class="notif-item ${r.urgency}">
+          <div class="notif-icon">${escapeHTML(r.icon)}</div>
+          <div class="notif-body">
+            <div class="notif-title">${escapeHTML(r.title)} <span style="font-weight:400;font-size:11px;color:var(--text-2)">· ${relLbl}</span></div>
+            <div class="notif-sub">${escapeHTML(r.sub)}</div>
+            <div class="notif-actions">${actionsHTML}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+  document.getElementById('notifModal').classList.add('show');
+
+  body.querySelectorAll('[data-convert-planned]').forEach(b => b.addEventListener('click', () => {
+    const p = db.planned.find(x => x.id === b.dataset.convertPlanned);
+    if (!p) return;
+    db.actual.push({ id: uid(), date: p.date, amount: p.amount, categoryId: p.categoryId, notes: p.notes || '' });
+    if (p.recFrequency) {
+      const stillActive = advancePlanned(p);
+      if (!stillActive) {
+        db.planned = db.planned.filter(x => x.id !== p.id);
+        toast('Logged · recurring schedule ended');
+      } else {
+        toast(`Logged as Actual · next due ${p.date}`);
+      }
+    } else {
+      db.planned = db.planned.filter(x => x.id !== p.id);
+      toast('Moved to Actual expenses');
+    }
+    save();
+    updateBellBadge();
+    openNotifModal();
+    renderExpenses(); renderDashboard();
+  }));
+  body.querySelectorAll('[data-goal-add]').forEach(b => b.addEventListener('click', () => {
+    document.getElementById('notifModal').classList.remove('show');
+    openContributeModal(b.dataset.goalAdd);
+  }));
+  body.querySelectorAll('[data-log-goalrec]').forEach(b => b.addEventListener('click', () => {
+    const g = db.goals.find(x => x.id === b.dataset.logGoalrec);
+    if (!g) return;
+    const nextDate = b.dataset.nextDate;
+    db.goalContributions.push({
+      id: uid(), goalId: g.id, date: nextDate, amount: g.recAmount,
+      notes: 'Auto-scheduled contribution'
+    });
+    g.recLastLogged = nextDate;
+    save();
+    updateBellBadge();
+    openNotifModal();
+    renderGoals();
+    toast(`Added ${fmt(g.recAmount)} to ${g.name}`);
+  }));
+}
+document.getElementById('bellBtn').addEventListener('click', openNotifModal);
+document.getElementById('notifClose').addEventListener('click', () => document.getElementById('notifModal').classList.remove('show'));
+document.getElementById('notifModal').addEventListener('click', (e) => {
+  if (e.target.id === 'notifModal') document.getElementById('notifModal').classList.remove('show');
+});
+
+// Fire OS notifications for urgent items once per day
+async function maybeFireOSNotifications() {
+  const notif = db.settings.notifications;
+  if (!notif?.enabled) return;
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  const today = todayISO();
+  const lastNotifDay = notif.lastNotifiedAt ? toLocalISO(new Date(notif.lastNotifiedAt)) : '';
+  if (lastNotifDay === today) return; // already notified today
+  const urgent = computeReminders().filter(r => r.urgency === 'urgent');
+  if (!urgent.length) return;
+  const first = urgent[0];
+  const body = urgent.length === 1
+    ? `${first.title} — ${first.sub}`
+    : `${urgent.length} urgent items. First: ${first.title}`;
+  try {
+    new Notification('🔔 Expense Tracker Reminders', {
+      body, icon: 'icon.svg', badge: 'icon.svg', tag: 'daily-reminders'
+    });
+    notif.lastNotifiedAt = Date.now();
+    save();
+  } catch (e) { console.error(e); }
 }
 
 // Reliable confirmation dialog — replaces native confirm(), which is blocked in
@@ -1312,15 +2089,121 @@ function renderIncome() {
    Expenses screen
 ============================================================ */
 let expMode = 'actual';
+function updateExpModeUI() {
+  document.getElementById('expFormTitle').textContent = 'Add ' + (expMode === 'actual' ? 'Actual' : 'Planned') + ' Expense';
+  document.getElementById('expRecWrap').style.display = expMode === 'planned' ? '' : 'none';
+}
 document.querySelectorAll('.segmented button[data-exp]').forEach(b => {
   b.addEventListener('click', () => {
     document.querySelectorAll('.segmented button[data-exp]').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
     expMode = b.dataset.exp;
-    document.getElementById('expFormTitle').textContent = 'Add ' + (expMode === 'actual' ? 'Actual' : 'Planned') + ' Expense';
+    updateExpModeUI();
     renderExpenses();
   });
 });
+document.getElementById('expRecFreq').addEventListener('change', () => {
+  document.getElementById('expRecCustomWrap').style.display =
+    document.getElementById('expRecFreq').value === 'custom' ? '' : 'none';
+});
+document.getElementById('expRecEnd').addEventListener('click', () => {
+  const inp = document.getElementById('expRecEnd');
+  openDatePicker(inp.value, (iso) => { inp.value = iso; }, 'End date');
+});
+
+// Advance a recurring planned expense to its next occurrence.
+// Returns true if it stayed active, false if it hit its end date and expired.
+function advancePlanned(p) {
+  if (!p.recFrequency) return false;
+  const d = parseISO(p.date);
+  switch (p.recFrequency) {
+    case 'daily':   d.setDate(d.getDate() + 1); break;
+    case 'weekly':  d.setDate(d.getDate() + 7); break;
+    case 'monthly': d.setMonth(d.getMonth() + 1); break;
+    case 'custom':  d.setDate(d.getDate() + (p.recIntervalDays || 14)); break;
+  }
+  const nextIso = toLocalISO(d);
+  if (p.recEndDate && nextIso > p.recEndDate) {
+    return false; // schedule has ended
+  }
+  p.date = nextIso;
+  return true;
+}
+
+// Given a recurring planned entry, return the next N upcoming dates AFTER its
+// current date (not including current). Stops at recEndDate if set.
+function upcomingPlannedDates(p, count) {
+  if (!p.recFrequency) return [];
+  const out = [];
+  const d = parseISO(p.date);
+  for (let i = 0; i < count; i++) {
+    switch (p.recFrequency) {
+      case 'daily':   d.setDate(d.getDate() + 1); break;
+      case 'weekly':  d.setDate(d.getDate() + 7); break;
+      case 'monthly': d.setMonth(d.getMonth() + 1); break;
+      case 'custom':  d.setDate(d.getDate() + (p.recIntervalDays || 14)); break;
+      default: return out;
+    }
+    const iso = toLocalISO(d);
+    if (p.recEndDate && iso > p.recEndDate) break;
+    out.push(iso);
+  }
+  return out;
+}
+
+// Expand a list of planned entries into all their occurrences within [start, end].
+// Non-recurring entries pass through if in range; recurring get their stored
+// date plus every projected FUTURE occurrence in range.
+// (Backward projection is intentionally NOT done — occurrences before the
+// stored date never happened, so drawing phantom cells there would be wrong.)
+function expandPlannedInRange(list, startISO, endISO) {
+  const out = [];
+  const stepForward = (d, p) => {
+    switch (p.recFrequency) {
+      case 'daily':   d.setDate(d.getDate() + 1); return true;
+      case 'weekly':  d.setDate(d.getDate() + 7); return true;
+      case 'monthly': d.setMonth(d.getMonth() + 1); return true;
+      case 'custom':  d.setDate(d.getDate() + (p.recIntervalDays || 14)); return true;
+    }
+    return false;
+  };
+  list.forEach(p => {
+    if (!p.recFrequency) {
+      if (p.date >= startISO && p.date <= endISO) out.push(p);
+      return;
+    }
+    if (p.date >= startISO && p.date <= endISO) out.push(p);
+    const dFwd = parseISO(p.date);
+    let guard = 0;
+    while (guard++ < 5000 && stepForward(dFwd, p)) {
+      const iso = toLocalISO(dFwd);
+      if (iso > endISO) break;
+      if (p.recEndDate && iso > p.recEndDate) break;
+      if (iso >= startISO) out.push({ ...p, date: iso, _virtual: true, id: p.id + ':' + iso });
+    }
+  });
+  return out;
+}
+
+// Roll recurring planned entries forward to their next current occurrence.
+// If a schedule's next date exceeds its end date, drop the entry.
+function autoAdvancePlannedRecurring() {
+  const today = todayISO();
+  let changed = false;
+  const remaining = [];
+  db.planned.forEach(p => {
+    if (!p.recFrequency) { remaining.push(p); return; }
+    let stillActive = true;
+    let guard = 0;
+    while (stillActive && p.date < today && guard++ < 10000) {
+      stillActive = advancePlanned(p);
+      changed = true;
+    }
+    if (stillActive) remaining.push(p);
+    else changed = true;
+  });
+  if (changed) { db.planned = remaining; save(); }
+}
 
 function categoryOptions() {
   return db.categories.map(c => `<option value="${c.id}">${escapeHTML(c.name)} (${c.group})</option>`).join('');
@@ -1338,10 +2221,24 @@ document.getElementById('expAdd').addEventListener('click', () => {
   if (amount <= 0) { toast('Enter an amount'); return; }
   if (!categoryId) { toast('Add a category first'); return; }
   const entry = { id: uid(), date, amount, categoryId, notes: document.getElementById('expNotes').value.trim() };
+  if (expMode === 'planned') {
+    const freq = document.getElementById('expRecFreq').value || null;
+    if (freq) {
+      entry.recFrequency = freq;
+      entry.recIntervalDays = freq === 'custom'
+        ? (parseInt(document.getElementById('expRecInterval').value, 10) || 14)
+        : null;
+      const endDate = document.getElementById('expRecEnd').value;
+      if (endDate) entry.recEndDate = endDate;
+    }
+  }
   (expMode === 'actual' ? db.actual : db.planned).push(entry);
   save();
   document.getElementById('expAmount').value = '';
   document.getElementById('expNotes').value = '';
+  document.getElementById('expRecFreq').value = '';
+  document.getElementById('expRecCustomWrap').style.display = 'none';
+  document.getElementById('expRecEnd').value = '';
   renderExpenses();
   renderDashboard();
   toast(expMode === 'actual' ? 'Actual expense added' : 'Planned expense added');
@@ -1349,6 +2246,7 @@ document.getElementById('expAdd').addEventListener('click', () => {
 
 function renderExpenses() {
   document.getElementById('expCategory').innerHTML = categoryOptions();
+  autoAdvancePlannedRecurring();
   const { from, to } = getRange('exp');
   const source = expMode === 'actual' ? db.actual : db.planned;
   const list = source
@@ -1360,11 +2258,21 @@ function renderExpenses() {
   el.innerHTML = list.map(x => {
     const cat = db.categories.find(c => c.id === x.categoryId);
     const groupClass = (cat?.group || 'Needs').toLowerCase();
+    const recBadge = (expMode === 'planned' && x.recFrequency)
+      ? `<span class="tag recurring" style="background:rgba(37,99,235,.12);color:var(--primary)">🔁 ${x.recFrequency === 'custom' ? 'every ' + (x.recIntervalDays || 14) + 'd' : x.recFrequency}${x.recEndDate ? ' · ends ' + x.recEndDate : ''}</span>` : '';
+    let upcomingHTML = '';
+    if (expMode === 'planned' && x.recFrequency) {
+      const nextDates = upcomingPlannedDates(x, 4);
+      if (nextDates.length) {
+        upcomingHTML = `<div class="meta" style="color:var(--primary);font-weight:500">📅 Next: ${nextDates.join(' · ')}</div>`;
+      }
+    }
     return `
     <div class="list-item">
       <div>
-        <div><b>${escapeHTML(cat?.name || 'Unknown')}</b><span class="tag ${groupClass}">${cat?.group || '?'}</span></div>
+        <div><b>${escapeHTML(cat?.name || 'Unknown')}</b><span class="tag ${groupClass}">${cat?.group || '?'}</span>${recBadge}</div>
         <div class="meta">${x.date}${x.notes ? ' · <span class="note">' + escapeHTML(x.notes) + '</span>' : ''}</div>
+        ${upcomingHTML}
       </div>
       <div style="display:flex;align-items:center">
         <div class="amount neg">${fmt(x.amount)}</div>
@@ -1595,7 +2503,119 @@ function initCategoryReorder() {
 function renderSettings() {
   renderCategoryList();
   renderIncomeTypeList();
+  renderNotifPrefs();
+  renderDataSummary();
   updateStorageStatus();
+  updateCloudUI();
+}
+
+function renderDataSummary() {
+  const el = document.getElementById('dataSummary');
+  if (!el) return;
+  const rows = [
+    { key: 'income',            label: 'Income entries',        count: db.income.length,           clear: () => { db.income = []; } },
+    { key: 'actual',            label: 'Actual expenses',       count: db.actual.length,           clear: () => { db.actual = []; } },
+    { key: 'planned',           label: 'Planned expenses',      count: db.planned.length,          clear: () => { db.planned = []; } },
+    { key: 'categories',        label: 'Categories',            count: db.categories.length,       clear: null },
+    { key: 'incomeTypes',       label: 'Income types',          count: db.incomeTypes.length,      clear: null },
+    { key: 'salaries',          label: 'Salary calculations',   count: db.salaries.length,         clear: () => { db.salaries = []; } },
+    { key: 'goals',             label: 'Goals',                 count: db.goals.length,            clear: null },
+    { key: 'goalContributions', label: 'Goal contributions',    count: db.goalContributions.length, clear: () => { db.goalContributions = []; } },
+  ];
+  el.innerHTML = rows.map((r, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 0">
+      <span style="color:var(--text-2)">${r.label}</span>
+      <span style="display:flex;align-items:center;gap:8px">
+        <b style="color:var(--text)">${r.count}</b>
+        ${r.clear ? `<button class="danger" data-clear-idx="${i}" style="padding:2px 8px;font-size:11px;border-radius:6px" title="Clear all ${r.label}">✕</button>` : ''}
+      </span>
+    </div>
+  `).join('');
+  el.querySelectorAll('[data-clear-idx]').forEach(b => b.addEventListener('click', async () => {
+    const r = rows[parseInt(b.dataset.clearIdx, 10)];
+    if (!r || !r.clear) return;
+    if (r.count === 0) { toast('Already empty'); return; }
+    if (!await confirmDialog(`Delete ALL ${r.count} ${r.label.toLowerCase()}? This cannot be undone.`,
+      { title: 'Force clear', okLabel: 'Delete All' })) return;
+    r.clear();
+    save();
+    renderSettings(); renderDashboard();
+    if (document.querySelector('.screen.active')?.id === 'expenses') renderExpenses();
+    if (document.querySelector('.screen.active')?.id === 'income')   renderIncome();
+    if (document.querySelector('.screen.active')?.id === 'daily')    renderDaily();
+    if (document.querySelector('.screen.active')?.id === 'goals')    renderGoals();
+    updateBellBadge();
+    toast(`${r.label} cleared`);
+  }));
+}
+
+function renderNotifPrefs() {
+  const el = document.getElementById('notifPrefs');
+  if (!el) return;
+  const n = db.settings.notifications;
+  const permission = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
+  let permBlock;
+  if (permission === 'granted') {
+    permBlock = '<span style="color:var(--success)">✓ OS notifications allowed</span>';
+  } else if (permission === 'denied') {
+    permBlock = '<span style="color:var(--danger)">✗ OS notifications blocked</span> — enable in your browser/OS settings.';
+  } else if (permission === 'default') {
+    permBlock = '<button class="secondary chip-mini" id="notifRequestPerm">Enable OS notifications</button>';
+  } else {
+    permBlock = '<span style="color:var(--text-2)">This browser does not support notifications.</span>';
+  }
+
+  const daysOpts = [1, 3, 7, 14, 30].map(d =>
+    `<option value="${d}"${d === n.daysAhead ? ' selected' : ''}>${d} day${d === 1 ? '' : 's'}</option>`).join('');
+
+  el.innerHTML = `
+    <label style="display:flex;align-items:center;gap:8px;margin-top:0">
+      <input type="checkbox" id="notifEnabled" ${n.enabled ? 'checked' : ''} style="width:auto" />
+      Enable reminders
+    </label>
+    <label>Show reminders this far ahead</label>
+    <select id="notifDaysAhead">${daysOpts}</select>
+    <label style="display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="notifShowPlanned" ${n.showPlanned ? 'checked' : ''} style="width:auto" />
+      Planned expense due dates
+    </label>
+    <label style="display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="notifShowGoals" ${n.showGoals ? 'checked' : ''} style="width:auto" />
+      Goal deadlines
+    </label>
+    <label style="display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="notifShowRecurring" ${n.showRecurring ? 'checked' : ''} style="width:auto" />
+      Recurring income due
+    </label>
+    <div style="margin-top:12px;font-size:12px">${permBlock}</div>
+    <div class="helper" style="margin-top:8px">
+      In-app reminders show via the 🔔 bell icon. OS notifications fire once per day for <b>urgent</b> items (due within 1 day for expenses/recurring; 3 days for goals).<br>
+      True push-when-closed requires a scheduled server — ask when you want to add that via Firebase Cloud Messaging.
+    </div>
+  `;
+
+  const savePref = () => {
+    n.enabled       = document.getElementById('notifEnabled').checked;
+    n.daysAhead     = parseInt(document.getElementById('notifDaysAhead').value, 10);
+    n.showPlanned   = document.getElementById('notifShowPlanned').checked;
+    n.showGoals     = document.getElementById('notifShowGoals').checked;
+    n.showRecurring = document.getElementById('notifShowRecurring').checked;
+    save();
+    updateBellBadge();
+  };
+  ['notifEnabled','notifDaysAhead','notifShowPlanned','notifShowGoals','notifShowRecurring']
+    .forEach(id => document.getElementById(id).addEventListener('change', savePref));
+
+  const askBtn = document.getElementById('notifRequestPerm');
+  if (askBtn) askBtn.addEventListener('click', async () => {
+    try {
+      const res = await Notification.requestPermission();
+      n.osPermission = res;
+      save();
+      renderNotifPrefs();
+      toast(res === 'granted' ? 'Notifications enabled' : 'Permission ' + res);
+    } catch { toast('Request failed'); }
+  });
 }
 
 function renderCategoryList() {
@@ -1709,13 +2729,19 @@ function renderDashboard() {
   const totalIncome  = income.reduce((s,x) => s + (+x.amount||0), 0);
   const totalExp     = actual.reduce((s,x) => s + (+x.amount||0), 0);
   const totalPlanned = planned.reduce((s,x) => s + (+x.amount||0), 0);
-  const plannedNet   = totalIncome - totalPlanned;
   document.getElementById('kpiIncome').textContent = fmt(totalIncome);
   document.getElementById('kpiExpenses').textContent = fmt(totalExp);
   document.getElementById('kpiNet').textContent = fmt(totalIncome - totalExp);
   const plannedNetEl = document.getElementById('kpiPlannedNet');
-  plannedNetEl.textContent = fmt(plannedNet);
-  plannedNetEl.style.color = plannedNet > 0 ? 'var(--success)' : (plannedNet < 0 ? 'var(--danger)' : 'var(--text)');
+  // With no planned expenses set, Planned Balance is 0 (no plan → nothing planned).
+  if (totalPlanned === 0) {
+    plannedNetEl.textContent = '₮0';
+    plannedNetEl.style.color = 'var(--text-2)';
+  } else {
+    const plannedNet = totalIncome - totalPlanned;
+    plannedNetEl.textContent = fmt(plannedNet);
+    plannedNetEl.style.color = plannedNet > 0 ? 'var(--success)' : (plannedNet < 0 ? 'var(--danger)' : 'var(--text)');
+  }
 
   // Needs/Wants/Savings donut
   const groups = { Needs: 0, Wants: 0, Savings: 0 };
@@ -1966,11 +2992,19 @@ function renderDaily() {
 }
 
 function renderCalendar() {
-  const source = dailyMode === 'actual' ? db.actual : db.planned;
+  const baseSource = dailyMode === 'actual' ? db.actual : db.planned;
+  document.getElementById('calModeLbl').textContent = dailyMode === 'actual' ? 'Actual' : 'Planned';
   const y = calDate.getFullYear();
   const m = calDate.getMonth();
   const daysInMonth = new Date(y, m + 1, 0).getDate();
   const firstWeekday = new Date(y, m, 1).getDay(); // 0 = Sun
+  const monthStartISO = toLocalISO(new Date(y, m, 1));
+  const monthEndISO   = toLocalISO(new Date(y, m, daysInMonth));
+
+  // Expand recurring planned entries across this month
+  const source = dailyMode === 'planned'
+    ? expandPlannedInRange(baseSource, monthStartISO, monthEndISO)
+    : baseSource;
 
   const cells = [];
   for (let i = 0; i < firstWeekday; i++) cells.push({ empty: true });
@@ -2045,7 +3079,7 @@ function renderDailyChips() {
 }
 
 function drawDailyStackedChart(from, to) {
-  const source = dailyMode === 'actual' ? db.actual : db.planned;
+  const baseSource = dailyMode === 'actual' ? db.actual : db.planned;
 
   let start, end;
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -2064,6 +3098,11 @@ function drawDailyStackedChart(from, to) {
     rangeNote = ` (${toLocalISO(start)} → ${toLocalISO(end)})`;
   }
   document.getElementById('dailyRangeLbl').textContent = rangeNote;
+
+  // For planned mode, project recurring entries into future occurrences within the range
+  const source = dailyMode === 'planned'
+    ? expandPlannedInRange(baseSource, toLocalISO(start), toLocalISO(end))
+    : baseSource;
 
   const days = [];
   const cur = new Date(start);
@@ -2181,6 +3220,261 @@ function renderDaySelected() {
 }
 
 /* ============================================================
+   Currency converter (foreign currency → MNT)
+   Uses open.er-api.com (free, no API key, ECB mid-market rates)
+============================================================ */
+const CURRENCIES = [
+  { c: 'USD', f: '🇺🇸', n: 'US Dollar' },
+  { c: 'EUR', f: '🇪🇺', n: 'Euro' },
+  { c: 'GBP', f: '🇬🇧', n: 'British Pound' },
+  { c: 'JPY', f: '🇯🇵', n: 'Japanese Yen' },
+  { c: 'CNY', f: '🇨🇳', n: 'Chinese Yuan' },
+  { c: 'KRW', f: '🇰🇷', n: 'Korean Won' },
+  { c: 'RUB', f: '🇷🇺', n: 'Russian Ruble' },
+  { c: 'CAD', f: '🇨🇦', n: 'Canadian Dollar' },
+  { c: 'AUD', f: '🇦🇺', n: 'Australian Dollar' },
+  { c: 'CHF', f: '🇨🇭', n: 'Swiss Franc' },
+  { c: 'HKD', f: '🇭🇰', n: 'Hong Kong Dollar' },
+  { c: 'SGD', f: '🇸🇬', n: 'Singapore Dollar' },
+  { c: 'THB', f: '🇹🇭', n: 'Thai Baht' },
+  { c: 'INR', f: '🇮🇳', n: 'Indian Rupee' },
+  { c: 'TRY', f: '🇹🇷', n: 'Turkish Lira' },
+  { c: 'AED', f: '🇦🇪', n: 'UAE Dirham' },
+  { c: 'IDR', f: '🇮🇩', n: 'Indonesian Rupiah' },
+  { c: 'MYR', f: '🇲🇾', n: 'Malaysian Ringgit' },
+  { c: 'PHP', f: '🇵🇭', n: 'Philippine Peso' },
+  { c: 'VND', f: '🇻🇳', n: 'Vietnamese Dong' },
+  { c: 'KZT', f: '🇰🇿', n: 'Kazakhstani Tenge' },
+  { c: 'CZK', f: '🇨🇿', n: 'Czech Koruna' },
+  { c: 'PLN', f: '🇵🇱', n: 'Polish Zloty' },
+  { c: 'SEK', f: '🇸🇪', n: 'Swedish Krona' },
+  { c: 'NOK', f: '🇳🇴', n: 'Norwegian Krone' },
+  { c: 'NZD', f: '🇳🇿', n: 'New Zealand Dollar' },
+  { c: 'ZAR', f: '🇿🇦', n: 'South African Rand' },
+  { c: 'BRL', f: '🇧🇷', n: 'Brazilian Real' },
+  { c: 'MXN', f: '🇲🇽', n: 'Mexican Peso' },
+];
+const MNT_META = { c: 'MNT', f: '🇲🇳', n: 'Mongolian Tugrik' };
+const ALL_CURRENCIES = [MNT_META, ...CURRENCIES];
+function getCurrencyMeta(code) {
+  return ALL_CURRENCIES.find(x => x.c === code) || { c: code, f: '🏳️', n: code };
+}
+
+const RATES_CACHE_KEY = 'rates-cache-v1';
+const RATES_CACHE_TTL_MS = 24 * 3600 * 1000; // 24h
+let currentRates = null;
+let converterTargetInput = null;
+let converterLastConverted = 0;
+let convFromCurr = 'USD';
+let convToCurr  = 'MNT';
+
+/* --- Currency picker (with search) --- */
+let curPickCallback = null;
+let curPickCurrent  = null;
+
+function openCurrencyPicker(current, callback, title = 'Select Currency') {
+  curPickCallback = callback;
+  curPickCurrent  = current;
+  document.getElementById('curPickTitle').textContent = title;
+  document.getElementById('curPickSearch').value = '';
+  renderCurPickList('');
+  document.getElementById('currencyPickerModal').classList.add('show');
+  setTimeout(() => document.getElementById('curPickSearch').focus(), 100);
+}
+function closeCurrencyPicker() {
+  document.getElementById('currencyPickerModal').classList.remove('show');
+  curPickCallback = null;
+}
+function renderCurPickList(filter) {
+  const q = filter.trim().toLowerCase();
+  const list = ALL_CURRENCIES.filter(c => {
+    if (!q) return true;
+    return c.c.toLowerCase().includes(q) || c.n.toLowerCase().includes(q);
+  });
+  const el = document.getElementById('curPickList');
+  if (!list.length) { el.innerHTML = '<div class="cur-pick-empty">No currencies match.</div>'; return; }
+  el.innerHTML = list.map(c => `
+    <div class="cur-pick-item${c.c === curPickCurrent ? ' active' : ''}" data-cur="${c.c}">
+      <span class="flag">${c.f}</span>
+      <div style="flex:1;min-width:0">
+        <div class="code">${c.c}</div>
+        <div class="name">${escapeHTML(c.n)}</div>
+      </div>
+    </div>
+  `).join('');
+  el.querySelectorAll('[data-cur]').forEach(x => x.addEventListener('click', () => {
+    if (curPickCallback) curPickCallback(x.dataset.cur);
+    closeCurrencyPicker();
+  }));
+}
+document.getElementById('curPickSearch').addEventListener('input', (e) => renderCurPickList(e.target.value));
+document.getElementById('curPickClose').addEventListener('click', closeCurrencyPicker);
+document.getElementById('currencyPickerModal').addEventListener('click', (e) => {
+  if (e.target.id === 'currencyPickerModal') closeCurrencyPicker();
+});
+
+function updateCurButtons() {
+  const from = getCurrencyMeta(convFromCurr);
+  const to   = getCurrencyMeta(convToCurr);
+  document.getElementById('convFromBtn').innerHTML =
+    `<span class="flag">${from.f}</span><span class="code">${from.c}</span><span class="name">${escapeHTML(from.n)}</span><span class="chevron">▼</span>`;
+  document.getElementById('convToBtn').innerHTML =
+    `<span class="flag">${to.f}</span><span class="code">${to.c}</span><span class="name">${escapeHTML(to.n)}</span><span class="chevron">▼</span>`;
+}
+document.getElementById('convFromBtn').addEventListener('click', () => {
+  openCurrencyPicker(convFromCurr, (code) => {
+    convFromCurr = code;
+    localStorage.setItem('conv-last-from', code);
+    updateCurButtons(); updateConverterResult();
+  }, 'Convert From');
+});
+document.getElementById('convToBtn').addEventListener('click', () => {
+  openCurrencyPicker(convToCurr, (code) => {
+    convToCurr = code;
+    localStorage.setItem('conv-last-to', code);
+    updateCurButtons(); updateConverterResult();
+  }, 'Convert To');
+});
+document.getElementById('convSwap').addEventListener('click', () => {
+  [convFromCurr, convToCurr] = [convToCurr, convFromCurr];
+  localStorage.setItem('conv-last-from', convFromCurr);
+  localStorage.setItem('conv-last-to', convToCurr);
+  const btn = document.getElementById('convSwap');
+  btn.classList.add('spinning');
+  setTimeout(() => btn.classList.remove('spinning'), 220);
+  updateCurButtons();
+  updateConverterResult();
+});
+
+async function fetchRatesUSDBase() {
+  const now = Date.now();
+  const raw = localStorage.getItem(RATES_CACHE_KEY);
+  const cached = raw ? JSON.parse(raw) : null;
+
+  if (cached && (now - cached.timestamp) < RATES_CACHE_TTL_MS) {
+    return { ...cached, source: 'cache-fresh' };
+  }
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/USD', { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!data.rates || !data.rates.MNT) throw new Error('Bad response');
+    const record = {
+      base: 'USD',
+      rates: data.rates,
+      updatedText: data.time_last_update_utc || new Date().toUTCString(),
+      timestamp: now
+    };
+    localStorage.setItem(RATES_CACHE_KEY, JSON.stringify(record));
+    return { ...record, source: 'network' };
+  } catch (e) {
+    if (cached) return { ...cached, source: 'cache-stale' };
+    throw e;
+  }
+}
+
+function convertVia(amount, from, to, ratesUSDBase) {
+  const r = ratesUSDBase.rates;
+  if (!r[from] || !r[to]) return null;
+  return amount * (r[to] / r[from]);
+}
+
+function fmtCurrency(amount, code) {
+  const rounded = Math.round(amount);
+  if (code === 'MNT') return fmt(rounded);
+  return code + ' ' + rounded.toLocaleString('en-US');
+}
+
+function updateConverterResult() {
+  if (!currentRates) return;
+  const raw = document.getElementById('convAmount').value.replace(/,/g, '');
+  const amt = parseFloat(raw) || 0;
+  const converted = convertVia(amt, convFromCurr, convToCurr, currentRates) || 0;
+  converterLastConverted = converted;
+  document.getElementById('convVal').textContent = fmtCurrency(converted, convToCurr);
+  const oneRate = convertVia(1, convFromCurr, convToCurr, currentRates) || 0;
+  document.getElementById('convRateLine').textContent = `1 ${convFromCurr} = ${fmtCurrency(oneRate, convToCurr)}`;
+  // Enable Use only if one side is MNT (that's what the app's Amount field stores)
+  const useBtn = document.getElementById('converterUse');
+  const hasMNT = (convFromCurr === 'MNT' || convToCurr === 'MNT');
+  useBtn.disabled = !hasMNT;
+  useBtn.style.opacity = hasMNT ? '1' : '.5';
+  useBtn.style.cursor = hasMNT ? 'pointer' : 'not-allowed';
+  useBtn.textContent = hasMNT ? 'Use ₮ amount' : 'Set one side to MNT';
+}
+
+async function openConverter(targetInput) {
+  converterTargetInput = targetInput;
+  convFromCurr = localStorage.getItem('conv-last-from') || 'USD';
+  convToCurr   = localStorage.getItem('conv-last-to')   || 'MNT';
+  if (!ALL_CURRENCIES.some(c => c.c === convFromCurr)) convFromCurr = 'USD';
+  if (!ALL_CURRENCIES.some(c => c.c === convToCurr))   convToCurr   = 'MNT';
+  updateCurButtons();
+
+  document.getElementById('convAmount').value = '';
+  document.getElementById('convVal').textContent = '₮0';
+  document.getElementById('convRateLine').innerHTML = '&nbsp;';
+  const statusEl = document.getElementById('convStatus');
+  statusEl.className = 'conv-status';
+  statusEl.textContent = 'Loading rates…';
+  document.getElementById('converterModal').classList.add('show');
+  setTimeout(() => document.getElementById('convAmount').focus(), 100);
+
+  try {
+    currentRates = await fetchRatesUSDBase();
+    const ageMs  = Date.now() - currentRates.timestamp;
+    const ageHrs = Math.round(ageMs / 3600000);
+    if (currentRates.source === 'network') {
+      statusEl.textContent = `Latest rates loaded · ${currentRates.updatedText}`;
+    } else if (currentRates.source === 'cache-fresh') {
+      statusEl.textContent = `Using cached rates (${ageHrs} h old, refreshes daily)`;
+    } else {
+      statusEl.className = 'conv-status warn';
+      statusEl.textContent = `⚠ Offline — using stale cached rates from ${new Date(currentRates.timestamp).toLocaleString()}`;
+    }
+    updateConverterResult();
+  } catch {
+    statusEl.className = 'conv-status error';
+    statusEl.textContent = '❌ Could not fetch rates. Connect to the internet at least once to enable conversion.';
+  }
+}
+
+document.getElementById('convAmount').addEventListener('input', updateConverterResult);
+document.getElementById('converterUse').addEventListener('click', () => {
+  if (!currentRates || !converterTargetInput) return;
+  const useBtn = document.getElementById('converterUse');
+  if (useBtn.disabled) return;
+  const inputAmt = parseFloat(document.getElementById('convAmount').value.replace(/,/g, '')) || 0;
+  if (inputAmt <= 0) { toast('Enter an amount first'); return; }
+  // Fill whichever side is MNT
+  let mntValue = 0;
+  if (convToCurr === 'MNT') mntValue = converterLastConverted;
+  else if (convFromCurr === 'MNT') mntValue = inputAmt;
+  const roundedMNT = Math.round(mntValue);
+  converterTargetInput.value = String(roundedMNT);
+  if (converterTargetInput.classList.contains('money-input')) {
+    formatMoneyInput(converterTargetInput);
+  }
+  document.getElementById('converterModal').classList.remove('show');
+  toast(`Filled with ${fmt(roundedMNT)}`);
+});
+document.getElementById('converterCancel').addEventListener('click', () =>
+  document.getElementById('converterModal').classList.remove('show'));
+document.getElementById('converterClose').addEventListener('click', () =>
+  document.getElementById('converterModal').classList.remove('show'));
+document.getElementById('converterModal').addEventListener('click', (e) => {
+  if (e.target.id === 'converterModal') document.getElementById('converterModal').classList.remove('show');
+});
+
+// Wire all convert buttons in the app
+document.querySelectorAll('[data-conv-target]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = document.getElementById(btn.dataset.convTarget);
+    if (target) openConverter(target);
+  });
+});
+
+/* ============================================================
    Custom calendar date picker (used by any date input)
 ============================================================ */
 let dpCurrentDate = null;
@@ -2264,6 +3558,89 @@ document.getElementById('goalDeadline').addEventListener('click', () => {
 /* ============================================================
    Goals (savings tracker)
 ============================================================ */
+const GOAL_ICONS = [
+  '🎯','✈️','🏠','🚗','💍','🎓','🏥','👶',
+  '💰','💻','📱','🎁','🏖️','⛰️','🎮','📚',
+  '🎨','🐕','🏋️','💼','🍰','🎸','📷','🚴',
+  '🎬','🎧','🛒','🧳','🏝️','🚀','🎂','💐'
+];
+
+const GOAL_QUOTES = {
+  starting: [
+    { icon: '💫', text: "Every journey starts with the first step. Nice one." },
+    { icon: '🌱', text: "You've begun — that's the hardest part!" },
+    { icon: '🚶', text: "Small steps, big dreams." },
+    { icon: '😅', text: "Barely started... but hey, at least you tried. Keep going!" },
+    { icon: '🎬', text: "Cue the training montage." },
+  ],
+  progressing: [
+    { icon: '💪', text: "Great start! Keep it up!" },
+    { icon: '🌱', text: "The seed is planted. Water it." },
+    { icon: '📈', text: "Consistency beats motivation. Stay boring." },
+    { icon: '😏', text: "Look at you, being all responsible." },
+    { icon: '🔥', text: "You're building momentum!" },
+  ],
+  midway: [
+    { icon: '🎉', text: "You're making real progress!" },
+    { icon: '🏔️', text: "The middle is where champions are made." },
+    { icon: '😎', text: "Not bad. Not bad at all." },
+    { icon: '💡', text: "Closer than you think. Keep pushing." },
+    { icon: '🎯', text: "Halfway is not stop-way. Onward." },
+  ],
+  almost: [
+    { icon: '🚀', text: "So close you can taste it!" },
+    { icon: '🌟', text: "The finish line is in sight!" },
+    { icon: '💯', text: "Don't fall at the last hurdle." },
+    { icon: '😤', text: "One final push — you got this." },
+    { icon: '🤨', text: "Wait, are you actually going to do it?!" },
+  ],
+  soClose: [
+    { icon: '🎯', text: "SO close! One more move and it's yours." },
+    { icon: '🏁', text: "You've basically done it. Now finish it." },
+    { icon: '⚡', text: "Almost there! Don't blink!" },
+    { icon: '🙌', text: "This is the easy part. Or so they say." },
+    { icon: '🥇', text: "Victory is basically guaranteed. Basically." },
+  ],
+  done: [
+    { icon: '🎊', text: "YOU DID IT! 🎊 Legend status unlocked." },
+    { icon: '👑', text: "Goal crushed! Time to set the next one, champ." },
+    { icon: '🏆', text: "See? You could do it all along." },
+    { icon: '🍾', text: "Pop the champagne (or the fizzy drink)." },
+    { icon: '💥', text: "Boom. Executed. Nailed it." },
+  ],
+  overdue: [
+    { icon: '⏰', text: "Deadline passed... but goals don't have expiry dates." },
+    { icon: '😬', text: "Late is better than never. Get back on it." },
+    { icon: '🤡', text: "The deadline was more of a suggestion, right?" },
+    { icon: '💪', text: "Missed the date, not the dream. Push through." },
+  ],
+};
+
+function pickQuoteFor(goalId, bucket) {
+  const arr = GOAL_QUOTES[bucket] || GOAL_QUOTES.starting;
+  // Deterministic-per-day pick so it doesn't flash on every render
+  const day = Math.floor(Date.now() / 86400000);
+  const seed = (goalId + '' + day).split('')
+    .reduce((a, c) => a + c.charCodeAt(0), 0);
+  return arr[seed % arr.length];
+}
+
+function getGoalQuote(g, saved, pct, today) {
+  const done = saved >= g.target && g.target > 0;
+  if (done) return { ...pickQuoteFor(g.id, 'done'), overdue: false };
+  if (g.deadline) {
+    const daysLeft = Math.round((parseISO(g.deadline) - parseISO(today)) / 86400000);
+    if (daysLeft < 0) return { ...pickQuoteFor(g.id, 'overdue'), overdue: true };
+  }
+  let bucket;
+  if      (pct >= 95) bucket = 'soClose';
+  else if (pct >= 70) bucket = 'almost';
+  else if (pct >= 30) bucket = 'midway';
+  else if (pct >= 10) bucket = 'progressing';
+  else                bucket = 'starting';
+  return { ...pickQuoteFor(g.id, bucket), overdue: false };
+}
+
 function goalSaved(goalId) {
   return db.goalContributions
     .filter(c => c.goalId === goalId)
@@ -2283,31 +3660,47 @@ function renderGoals() {
     const pct = g.target > 0 ? Math.min(100, saved / g.target * 100) : 0;
     const done = saved >= g.target && g.target > 0;
 
-    let deadlineHTML = '';
+    const metaItems = [];
     if (g.deadline) {
       const daysLeft = Math.round((parseISO(g.deadline) - parseISO(today)) / 86400000);
       let cls = ''; let text = '';
-      if (daysLeft < 0)         { cls = 'danger';  text = `Overdue by ${-daysLeft}d`; }
-      else if (daysLeft === 0)  { cls = 'warning'; text = 'Due today'; }
-      else if (daysLeft <= 30)  { cls = 'warning'; text = `${daysLeft} days left`; }
-      else                      { cls = '';       text = `${daysLeft} days left`; }
-      deadlineHTML = `<div class="goal-deadline ${cls}">${g.deadline} · ${text}</div>`;
+      if (daysLeft < 0)         { cls = 'deadline-danger';  text = `Overdue ${-daysLeft}d`; }
+      else if (daysLeft === 0)  { cls = 'deadline-warning'; text = 'Due today'; }
+      else if (daysLeft <= 30)  { cls = 'deadline-warning'; text = `${daysLeft}d left`; }
+      else                      { cls = '';                 text = `${daysLeft}d left`; }
+      metaItems.push(`<span class="goal-meta-item ${cls}">📅 ${g.deadline} · ${text}</span>`);
     }
+    if (g.recFrequency) {
+      const freqLbl = g.recFrequency === 'custom'
+        ? `Every ${g.recIntervalDays || 14}d`
+        : (g.recFrequency.charAt(0).toUpperCase() + g.recFrequency.slice(1));
+      const nextDate = computeNextRecurring({
+        frequency: g.recFrequency, startDate: g.recStartDate,
+        lastLogged: g.recLastLogged, intervalDays: g.recIntervalDays
+      });
+      metaItems.push(`<span class="goal-meta-item recurring">🔁 ${freqLbl} · ${fmtCompact(g.recAmount)}${nextDate ? ' · ' + nextDate : ''}</span>`);
+    }
+    const metaHTML = metaItems.length ? `<div class="goal-meta">${metaItems.join('')}</div>` : '';
+    const quote = getGoalQuote(g, saved, pct, today);
+    const quoteHTML = `<div class="goal-quote${quote.overdue ? ' overdue' : ''}"><span class="qicon">${quote.icon}</span>${escapeHTML(quote.text)}</div>`;
 
     return `
       <div class="goal-card${done ? ' done' : ''}">
         <div class="goal-head">
           <div class="goal-title">
             <span class="goal-icon">${escapeHTML(g.icon || '🎯')}</span>
-            <div style="min-width:0">
+            <div style="min-width:0;flex:1">
               <div class="goal-name">${escapeHTML(g.name)}</div>
-              <div class="goal-sub">${fmt(saved)} of ${fmt(g.target)}</div>
-              ${deadlineHTML}
+              <div class="goal-numbers">
+                <span class="saved">${fmt(saved)}</span> <span class="of">saved of</span> <span class="target">${fmt(g.target)}</span>
+              </div>
             </div>
           </div>
           <div class="goal-pct">${pct.toFixed(0)}%</div>
         </div>
+        ${metaHTML}
         <div class="goal-bar"><span style="width:${pct.toFixed(1)}%"></span></div>
+        ${quoteHTML}
         <div class="goal-foot">
           <div class="goal-remaining">${done ? '✓ Goal reached!' : `<b>${fmt(remaining)}</b> left`}</div>
           <div class="goal-actions">
@@ -2338,6 +3731,49 @@ function renderGoals() {
   }));
 }
 
+// Frequency dropdown → show/hide extra fields
+document.getElementById('goalRecFreq').addEventListener('change', () => {
+  const freq = document.getElementById('goalRecFreq').value;
+  document.getElementById('goalRecFields').style.display = freq ? '' : 'none';
+  document.getElementById('goalRecCustomWrap').style.display = freq === 'custom' ? '' : 'none';
+});
+document.getElementById('goalRecStart').addEventListener('click', () => {
+  const inp = document.getElementById('goalRecStart');
+  openDatePicker(inp.value, (iso) => { inp.value = iso; }, 'First contribution date');
+});
+
+function wireIconGrid(gridId, inputId) {
+  const grid = document.getElementById(gridId);
+  const input = document.getElementById(inputId);
+  if (!grid || !input) return;
+  const highlight = () => {
+    grid.querySelectorAll('button').forEach(b =>
+      b.classList.toggle('selected', b.dataset.gicon === input.value));
+  };
+  const open  = () => { grid.classList.add('open'); highlight(); };
+  const close = () => grid.classList.remove('open');
+
+  grid.innerHTML = GOAL_ICONS.map(ic =>
+    `<button type="button" data-gicon="${ic}">${ic}</button>`
+  ).join('');
+  grid.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    input.value = b.dataset.gicon;
+    highlight();
+    close();
+  }));
+  input.addEventListener('click', open);
+  input.addEventListener('focus', open);
+  input.addEventListener('input', highlight);
+
+  // Close if user taps elsewhere (but not the input or a button inside the grid)
+  document.addEventListener('click', (e) => {
+    if (!grid.classList.contains('open')) return;
+    if (e.target === input || grid.contains(e.target)) return;
+    close();
+  }, true);
+}
+wireIconGrid('goalIconGrid', 'goalIcon');
+
 document.getElementById('goalAdd').addEventListener('click', () => {
   const name = document.getElementById('goalName').value.trim();
   const target = unmoney(document.getElementById('goalTarget').value);
@@ -2346,14 +3782,28 @@ document.getElementById('goalAdd').addEventListener('click', () => {
   const icon = document.getElementById('goalIcon').value.trim() || '🎯';
   const deadline = document.getElementById('goalDeadline').value || null;
   const notes = document.getElementById('goalNotes').value.trim();
-  db.goals.push({ id: uid(), name, target, icon, deadline, notes, createdDate: todayISO() });
+
+  const recFreq = document.getElementById('goalRecFreq').value || null;
+  const recAmount = recFreq ? unmoney(document.getElementById('goalRecAmount').value) : 0;
+  const recStart = recFreq ? document.getElementById('goalRecStart').value : null;
+  if (recFreq) {
+    if (recAmount <= 0) { toast('Enter a recurring amount'); return; }
+    if (!recStart)      { toast('Pick a first contribution date'); return; }
+  }
+  const recIntervalDays = recFreq === 'custom' ? (parseInt(document.getElementById('goalRecInterval').value, 10) || 14) : null;
+
+  db.goals.push({
+    id: uid(), name, target, icon, deadline, notes, createdDate: todayISO(),
+    recFrequency: recFreq, recAmount, recStartDate: recStart,
+    recIntervalDays, recLastLogged: null
+  });
   save();
-  document.getElementById('goalName').value = '';
-  document.getElementById('goalTarget').value = '';
-  document.getElementById('goalDeadline').value = '';
-  document.getElementById('goalNotes').value = '';
+  ['goalName','goalTarget','goalDeadline','goalNotes','goalRecAmount','goalRecStart'].forEach(id =>
+    document.getElementById(id).value = '');
   document.getElementById('goalIcon').value = '🎯';
-  renderGoals();
+  document.getElementById('goalRecFreq').value = '';
+  document.getElementById('goalRecFields').style.display = 'none';
+  renderGoals(); updateBellBadge();
   toast('Goal added');
 });
 
@@ -2369,14 +3819,59 @@ function openContributeModal(goalId) {
       Current: <b>${fmt(goalSaved(g.id))}</b> of ${fmt(g.target)} — <b>${fmt(Math.max(0, g.target - goalSaved(g.id)))}</b> left
     </div>
     <label>Date</label><input type="date" id="mDate" value="${todayISO()}" />
-    <label>Amount (₮)</label><input type="text" id="mAmount" class="money-input" inputmode="numeric" autocomplete="off" placeholder="0" />
+    <label>Amount (₮)</label>
+    <input type="text" id="mAmount" class="money-input" inputmode="numeric" autocomplete="off" placeholder="0" />
+    <div class="qa-row" id="qaRowContrib" data-qa-target="mAmount"></div>
     <label>Notes</label><textarea id="mNotes" placeholder="Optional..."></textarea>
   `;
   const mAmount = document.getElementById('mAmount');
   mAmount.addEventListener('input', () => formatMoneyInput(mAmount));
   formatMoneyInput(mAmount);
+  renderQuickAmountRow('qaRowContrib', 'mAmount', false);
   document.getElementById('editModal').classList.add('show');
   setTimeout(() => mAmount.focus(), 100);
+}
+
+function renderQuickAmountRow(rowId, targetInputId, editing) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  const amounts = db.settings.quickAmounts || [50000, 100000, 200000];
+  if (!editing) {
+    row.innerHTML = amounts.map((a, i) =>
+      `<button type="button" class="qa-btn" data-qa-set="${a}">${fmtCompact(a)}</button>`
+    ).join('') + `<button type="button" class="qa-edit-btn" data-qa-edit-toggle title="Edit these amounts">✎ Edit</button>`;
+    row.querySelectorAll('[data-qa-set]').forEach(b => b.addEventListener('click', () => {
+      const inp = document.getElementById(targetInputId);
+      inp.value = b.dataset.qaSet;
+      formatMoneyInput(inp);
+      inp.focus();
+    }));
+    row.querySelector('[data-qa-edit-toggle]').addEventListener('click', () => renderQuickAmountRow(rowId, targetInputId, true));
+  } else {
+    row.innerHTML = amounts.map((a, i) =>
+      `<input class="qa-inp money-input" inputmode="numeric" data-qa-idx="${i}" value="${a}" />`
+    ).join('') +
+    `<button type="button" class="qa-save" data-qa-save>✓ Save</button>
+     <button type="button" class="qa-cancel" data-qa-cancel>Cancel</button>`;
+    row.querySelectorAll('.qa-inp').forEach(inp => {
+      inp.addEventListener('input', () => formatMoneyInput(inp));
+      formatMoneyInput(inp);
+    });
+    row.querySelector('[data-qa-save]').addEventListener('click', () => {
+      const newAmounts = Array.from(row.querySelectorAll('.qa-inp')).map(inp => unmoney(inp.value));
+      db.settings.quickAmounts = newAmounts.map(v => v > 0 ? v : 0);
+      save();
+      renderAllQuickAmountRows();
+      toast('Quick amounts saved');
+    });
+    row.querySelector('[data-qa-cancel]').addEventListener('click', () => renderQuickAmountRow(rowId, targetInputId, false));
+  }
+}
+
+// Re-render every quick-amount row currently in the DOM
+function renderAllQuickAmountRows() {
+  document.querySelectorAll('.qa-row[data-qa-target]').forEach(row =>
+    renderQuickAmountRow(row.id, row.dataset.qaTarget, false));
 }
 
 /* Edit goal modal (reuses editModal DOM) */
@@ -2397,18 +3892,52 @@ function openGoalEditModal(goalId) {
         <input type="text" id="mGoalName" value="${escapeHTML(g.name)}" autocomplete="off" />
       </div>
     </div>
+    <div class="icon-grid" id="mGoalIconGrid"></div>
     <label>Target Amount (₮)</label>
     <input type="text" id="mGoalTarget" class="money-input" inputmode="numeric" autocomplete="off" value="${g.target}" />
     <label>Deadline (optional)</label>
     <input type="text" id="mGoalDeadline" readonly placeholder="📅 Tap to choose date" style="cursor: pointer;" value="${g.deadline || ''}" />
     <label>Notes</label>
     <textarea id="mGoalNotes">${escapeHTML(g.notes || '')}</textarea>
+
+    <div style="border-top:1px dashed var(--border); margin-top:14px; padding-top:12px">
+      <label style="margin-top:0;font-weight:600">🔁 Auto-contribution schedule</label>
+      <label>Frequency</label>
+      <select id="mGoalRecFreq">
+        <option value=""${!g.recFrequency ? ' selected' : ''}>None</option>
+        <option value="daily"${g.recFrequency === 'daily' ? ' selected' : ''}>Daily</option>
+        <option value="weekly"${g.recFrequency === 'weekly' ? ' selected' : ''}>Weekly</option>
+        <option value="monthly"${g.recFrequency === 'monthly' ? ' selected' : ''}>Monthly</option>
+        <option value="custom"${g.recFrequency === 'custom' ? ' selected' : ''}>Custom (every N days)</option>
+      </select>
+      <div id="mGoalRecFields" style="display:${g.recFrequency ? '' : 'none'}">
+        <div id="mGoalRecCustomWrap" style="display:${g.recFrequency === 'custom' ? '' : 'none'}">
+          <label>Every N days</label>
+          <input type="text" id="mGoalRecInterval" inputmode="numeric" value="${g.recIntervalDays || 14}" />
+        </div>
+        <label>Amount per contribution (₮)</label>
+        <input type="text" id="mGoalRecAmount" class="money-input" inputmode="numeric" autocomplete="off" value="${g.recAmount || ''}" placeholder="0" />
+        <label>First contribution date</label>
+        <input type="text" id="mGoalRecStart" readonly placeholder="📅 Tap to choose date" style="cursor: pointer;" value="${g.recStartDate || ''}" />
+      </div>
+    </div>
   `;
+  wireIconGrid('mGoalIconGrid', 'mGoalIcon');
   const mAmount = document.getElementById('mGoalTarget');
   mAmount.addEventListener('input', () => formatMoneyInput(mAmount));
   formatMoneyInput(mAmount);
+  const mRecAmt = document.getElementById('mGoalRecAmount');
+  mRecAmt.addEventListener('input', () => formatMoneyInput(mRecAmt));
+  formatMoneyInput(mRecAmt);
   const mDl = document.getElementById('mGoalDeadline');
   mDl.addEventListener('click', () => openDatePicker(mDl.value, (iso) => { mDl.value = iso; }, 'Deadline'));
+  const mRecStart = document.getElementById('mGoalRecStart');
+  mRecStart.addEventListener('click', () => openDatePicker(mRecStart.value, (iso) => { mRecStart.value = iso; }, 'First contribution date'));
+  document.getElementById('mGoalRecFreq').addEventListener('change', () => {
+    const f = document.getElementById('mGoalRecFreq').value;
+    document.getElementById('mGoalRecFields').style.display = f ? '' : 'none';
+    document.getElementById('mGoalRecCustomWrap').style.display = f === 'custom' ? '' : 'none';
+  });
   document.getElementById('editModal').classList.add('show');
 }
 
@@ -2448,9 +3977,19 @@ function openGoalHistoryModal(goalId) {
   document.querySelectorAll('#editModalBody [data-del-contrib]').forEach(b => b.addEventListener('click', async () => {
     if (!await confirmDialog('Delete this contribution?', { title: 'Delete Contribution' })) return;
     db.goalContributions = db.goalContributions.filter(c => c.id !== b.dataset.delContrib);
+    // Roll back the recurring schedule: recLastLogged should be the date of the
+    // most recent remaining contribution (or null if none remain).
+    const g = db.goals.find(x => x.id === goalId);
+    if (g && g.recFrequency) {
+      const remaining = db.goalContributions
+        .filter(c => c.goalId === goalId)
+        .sort((a, b) => b.date.localeCompare(a.date));
+      g.recLastLogged = remaining[0]?.date || null;
+    }
     save();
     openGoalHistoryModal(goalId); // refresh
     renderGoals();
+    updateBellBadge();
   }));
   document.getElementById('editModal').classList.add('show');
 }
@@ -2488,6 +4027,7 @@ function openEditModal(kind, id) {
     const catOpts = db.categories.map(c =>
       `<option value="${c.id}"${c.id === item.categoryId ? ' selected' : ''}>${escapeHTML(c.name)} (${c.group})</option>`
     ).join('');
+    const currentFreq = item.recFrequency || '';
     bodyHTML = `
       <label>Type</label>
       <div class="segmented" style="margin-bottom:12px" id="mKindSeg">
@@ -2497,6 +4037,22 @@ function openEditModal(kind, id) {
       <label>Date</label><input type="date" id="mDate" value="${item.date}" />
       <label>Amount (₮)</label><input type="text" id="mAmount" class="money-input" inputmode="numeric" autocomplete="off" value="${item.amount}" />
       <label>Category</label><select id="mCategory">${catOpts}</select>
+      <div id="mExpRecWrap" style="display:${kind === 'planned' ? '' : 'none'}; border-top:1px dashed var(--border); margin-top:12px; padding-top:12px">
+        <label style="margin-top:0;font-weight:600">🔁 Frequency (planned only)</label>
+        <select id="mExpRecFreq">
+          <option value=""${!currentFreq ? ' selected' : ''}>None (one-time)</option>
+          <option value="daily"${currentFreq === 'daily' ? ' selected' : ''}>Daily</option>
+          <option value="weekly"${currentFreq === 'weekly' ? ' selected' : ''}>Weekly</option>
+          <option value="monthly"${currentFreq === 'monthly' ? ' selected' : ''}>Monthly</option>
+          <option value="custom"${currentFreq === 'custom' ? ' selected' : ''}>Custom (every N days)</option>
+        </select>
+        <div id="mExpRecCustomWrap" style="display:${currentFreq === 'custom' ? '' : 'none'}">
+          <label>Every N days</label>
+          <input type="text" id="mExpRecInterval" inputmode="numeric" value="${item.recIntervalDays || 14}" />
+        </div>
+        <label>End date (optional)</label>
+        <input type="text" id="mExpRecEnd" readonly placeholder="📅 Tap — leave empty for unlimited" style="cursor: pointer;" value="${item.recEndDate || ''}" />
+      </div>
       <label>Notes</label><textarea id="mNotes">${escapeHTML(item.notes || '')}</textarea>
     `;
   }
@@ -2510,8 +4066,17 @@ function openEditModal(kind, id) {
     b.addEventListener('click', () => {
       document.querySelectorAll('#mKindSeg [data-mkind]').forEach(x => x.classList.remove('active'));
       b.classList.add('active');
+      const wrap = document.getElementById('mExpRecWrap');
+      if (wrap) wrap.style.display = b.dataset.mkind === 'planned' ? '' : 'none';
     });
   });
+  const mFreq = document.getElementById('mExpRecFreq');
+  if (mFreq) mFreq.addEventListener('change', () => {
+    document.getElementById('mExpRecCustomWrap').style.display = mFreq.value === 'custom' ? '' : 'none';
+  });
+  const mEnd = document.getElementById('mExpRecEnd');
+  if (mEnd) mEnd.addEventListener('click', () =>
+    openDatePicker(mEnd.value, (iso) => { mEnd.value = iso; }, 'End date'));
   document.getElementById('editModal').classList.add('show');
 }
 
@@ -2542,7 +4107,31 @@ document.getElementById('editModalSave').addEventListener('click', () => {
     g.icon = document.getElementById('mGoalIcon').value.trim() || '🎯';
     g.deadline = document.getElementById('mGoalDeadline').value || null;
     g.notes = document.getElementById('mGoalNotes').value.trim();
-    save(); renderGoals();
+
+    const newFreq = document.getElementById('mGoalRecFreq').value || null;
+    if (newFreq) {
+      const amt = unmoney(document.getElementById('mGoalRecAmount').value);
+      const start = document.getElementById('mGoalRecStart').value;
+      if (amt <= 0) { toast('Enter a recurring amount'); return; }
+      if (!start)   { toast('Pick a first contribution date'); return; }
+      // If schedule shape changed, reset lastLogged so next date recomputes fresh
+      const scheduleChanged = g.recFrequency !== newFreq || g.recStartDate !== start;
+      g.recFrequency = newFreq;
+      g.recAmount = amt;
+      g.recStartDate = start;
+      g.recIntervalDays = newFreq === 'custom'
+        ? (parseInt(document.getElementById('mGoalRecInterval').value, 10) || 14)
+        : null;
+      if (scheduleChanged) g.recLastLogged = null;
+    } else {
+      g.recFrequency = null;
+      g.recAmount = 0;
+      g.recStartDate = null;
+      g.recIntervalDays = null;
+      g.recLastLogged = null;
+    }
+
+    save(); renderGoals(); updateBellBadge();
     closeEditModal();
     toast('Goal updated');
     return;
@@ -2557,7 +4146,20 @@ document.getElementById('editModalSave').addEventListener('click', () => {
     db.goalContributions.push({
       id: uid(), goalId: editCtx.goalId, date, amount, notes
     });
-    save(); renderGoals();
+    // Advance the recurring schedule if this contribution fulfills the next due date.
+    const g = db.goals.find(x => x.id === editCtx.goalId);
+    if (g && g.recFrequency) {
+      const nextDue = computeNextRecurring({
+        startDate: g.recStartDate,
+        lastLogged: g.recLastLogged,
+        frequency: g.recFrequency,
+        intervalDays: g.recIntervalDays
+      });
+      if (nextDue && date >= nextDue) {
+        g.recLastLogged = nextDue;
+      }
+    }
+    save(); renderGoals(); updateBellBadge();
     closeEditModal();
     toast('Contribution added');
     return;
@@ -2587,14 +4189,34 @@ document.getElementById('editModalSave').addEventListener('click', () => {
       item.date = date; item.amount = amount;
       item.categoryId = document.getElementById('mCategory').value;
       item.notes = notes;
+      if (newKind === 'planned') {
+        const freq = document.getElementById('mExpRecFreq').value || null;
+        if (freq) {
+          item.recFrequency = freq;
+          item.recIntervalDays = freq === 'custom'
+            ? (parseInt(document.getElementById('mExpRecInterval').value, 10) || 14)
+            : null;
+          const endVal = document.getElementById('mExpRecEnd').value;
+          if (endVal) item.recEndDate = endVal;
+          else delete item.recEndDate;
+        } else {
+          delete item.recFrequency;
+          delete item.recIntervalDays;
+          delete item.recEndDate;
+        }
+      } else {
+        // Actual expenses never carry frequency
+        delete item.recFrequency;
+        delete item.recIntervalDays;
+        delete item.recEndDate;
+      }
       if (newKind !== oldKind) {
-        // Move entry to the other array
         const idx = oldSource.indexOf(item);
         oldSource.splice(idx, 1);
         (newKind === 'actual' ? db.actual : db.planned).push(item);
       }
     }
-    save(); renderExpenses(); renderDashboard();
+    save(); renderExpenses(); renderDashboard(); updateBellBadge();
   }
   closeEditModal();
   toast('Updated');
@@ -2610,11 +4232,17 @@ function escapeHTML(s) {
 /* ============================================================
    Init
 ============================================================ */
+autoAdvancePlannedRecurring();
 initPeriodFilter('dash',  renderDashboard);
 initPeriodFilter('inc',   renderIncome);
 initPeriodFilter('exp',   renderExpenses);
 initPeriodFilter('daily', renderDaily);
 initMoneyInputs();
+renderAllQuickAmountRows();
+updateBellBadge();
+maybeFireOSNotifications();
+// Re-check every 30 min while the app stays open
+setInterval(() => { updateBellBadge(); maybeFireOSNotifications(); }, 30 * 60 * 1000);
 document.getElementById('sDate').value = todayISO();
 document.getElementById('incDate').value = todayISO();
 document.getElementById('expDate').value = todayISO();
@@ -2627,6 +4255,9 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   });
 }
+
+// Kick off Firebase init (does nothing if config is empty)
+initFirebase();
 </script>
 </body>
 </html>
