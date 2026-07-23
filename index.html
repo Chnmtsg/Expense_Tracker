@@ -2888,6 +2888,188 @@ function analyzeExpenses(income, actual, planned, from, to) {
       `Small buys add up fast. Try a "no small spends" day/week — you'll be surprised how much sticks.`);
   }
 
+  // --- Rule: biggest single expense in period ---
+  if (actual.length) {
+    const biggest = actual.reduce((a, b) => (+a.amount > +b.amount ? a : b));
+    if (totalActual > 0 && +biggest.amount / totalActual > 0.25) {
+      const cat = db.categories.find(c => c.id === biggest.categoryId);
+      const pct = (+biggest.amount / totalActual * 100).toFixed(0);
+      push('warning', '💥', `One expense is ${pct}% of this period`,
+        `${fmt(biggest.amount)} on ${cat?.name || 'a category'} (${biggest.date}). If it was necessary, plan for the next one. If not, watch out for repeats.`);
+    }
+  }
+
+  // --- Rule: highest spending day ---
+  if (actual.length >= 3) {
+    const byDay = {};
+    actual.forEach(x => { byDay[x.date] = (byDay[x.date] || 0) + (+x.amount || 0); });
+    const [topDay, topDayAmt] = Object.entries(byDay).sort((a, b) => b[1] - a[1])[0];
+    const avgDay = totalActual / Object.keys(byDay).length;
+    if (topDayAmt > avgDay * 3 && topDayAmt > 50000) {
+      push('warning', '📅', `${topDay} was your biggest spending day`,
+        `Spent ${fmt(topDayAmt)} — about ${(topDayAmt / avgDay).toFixed(1)}× your daily average. Was it planned?`);
+    }
+  }
+
+  // --- Rule: weekend vs weekday spending ---
+  if (actual.length >= 5 && totalActual > 0) {
+    let weekend = 0, weekday = 0;
+    actual.forEach(x => {
+      const dow = parseISO(x.date).getDay();
+      if (dow === 0 || dow === 6) weekend += (+x.amount || 0);
+      else weekday += (+x.amount || 0);
+    });
+    const weekendPct = weekend / totalActual * 100;
+    if (weekendPct > 45) {
+      push('warning', '🎉', `Weekends are ${weekendPct.toFixed(0)}% of your spending`,
+        `Weekends are only 2/7 of the week but eat >45% of your money. Plan a low-cost weekend activity.`);
+    }
+  }
+
+  // --- Rule: emergency fund suggestion ---
+  const hasEmergency = db.goals.some(g =>
+    /emergen|rainy|safety|buffer|reserve/i.test(g.name || ''));
+  if (!hasEmergency && totalIncome > 0) {
+    push('warning', '⛑️', 'No emergency fund goal set up',
+      `Experts suggest 3–6 months of essential expenses as a safety cushion. Create a goal called "Emergency Fund" to start building one.`);
+  }
+
+  // --- Rule: single income source ---
+  const usedIncomeTypes = new Set(income.map(x => x.typeId).filter(Boolean));
+  if (income.length >= 3 && usedIncomeTypes.size === 1 && totalIncome > 0) {
+    const t = db.incomeTypes.find(t => t.id === [...usedIncomeTypes][0]);
+    push('warning', '🎯', `All income from one source (${t?.name || 'one type'})`,
+      `Diversification protects you. A side gig, investment income, or freelance work adds resilience.`);
+  }
+
+  // --- Rule: projected end-of-month pace ---
+  const now = new Date(); now.setHours(0,0,0,0);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const dayOfMonth = now.getDate();
+  const daysInMonth = monthEnd.getDate();
+  if (from && to && from === toLocalISO(monthStart) && to === toLocalISO(monthEnd) && dayOfMonth > 5 && dayOfMonth < daysInMonth) {
+    const monthActual = db.actual.filter(x => x.date >= from && x.date <= toLocalISO(now))
+      .reduce((s, x) => s + (+x.amount || 0), 0);
+    const projected = monthActual / dayOfMonth * daysInMonth;
+    const monthIncomeSoFar = db.income.filter(x => x.date >= from && x.date <= toLocalISO(now))
+      .reduce((s, x) => s + (+x.amount || 0), 0);
+    if (monthIncomeSoFar > 0 && projected > monthIncomeSoFar) {
+      push('warning', '🔮', `Projected spending: ${fmt(projected)} this month`,
+        `At your current pace, you'll spend more than you've earned this month. Slow down for the rest of the month.`);
+    } else if (projected > 0) {
+      push('good', '🔮', `On pace for ${fmt(projected)} this month`,
+        `Based on ${dayOfMonth} days in — that's your projected total.`);
+    }
+  }
+
+  // --- Rule: category planned but zero actual ---
+  const zeroActualCats = Object.keys(plannedByCat).filter(catId => !byCat[catId]);
+  if (zeroActualCats.length >= 2) {
+    const names = zeroActualCats.slice(0, 3).map(id => db.categories.find(c => c.id === id)?.name).filter(Boolean).join(', ');
+    push('good', '📋', `${zeroActualCats.length} planned categories with zero actual`,
+      `Nothing spent on ${names || 'them'} yet — great discipline, or update the plan if they're no longer needed.`);
+  }
+
+  // --- Rule: category with no plan but big actual ---
+  const unplannedCats = Object.entries(byCat)
+    .filter(([catId, amt]) => !plannedByCat[catId] && amt > totalActual * 0.15);
+  if (unplannedCats.length) {
+    const [catId, amt] = unplannedCats[0];
+    const cat = db.categories.find(c => c.id === catId);
+    push('warning', '🤔', `Unplanned: ${cat?.name || 'a category'} at ${fmt(amt)}`,
+      `You've spent significantly on ${cat?.name || 'this'} without any planned budget. Add it to your plan so you can track it.`);
+  }
+
+  // --- Rule: no-spend day streak ---
+  if (actual.length > 0) {
+    const daysWithSpending = new Set(actual.map(x => x.date));
+    // Count consecutive most-recent days with no spending
+    let noSpendStreak = 0;
+    const check = new Date(today);
+    while (noSpendStreak < 30) {
+      const iso = toLocalISO(check);
+      if (iso < (from || '0000-00-00')) break;
+      if (iso > (to   || '9999-99-99')) { check.setDate(check.getDate() - 1); continue; }
+      if (daysWithSpending.has(iso)) break;
+      noSpendStreak++;
+      check.setDate(check.getDate() - 1);
+    }
+    if (noSpendStreak >= 3) {
+      push('good', '🎖️', `${noSpendStreak}-day no-spend streak`,
+        `You haven't logged any expenses for the last ${noSpendStreak} days. Keep it up!`);
+    }
+  }
+
+  // --- Rule: consistent logging (many days with entries) ---
+  const uniqueDaysLogged = new Set([...actual, ...income].map(x => x.date)).size;
+  if (uniqueDaysLogged >= 15) {
+    push('good', '📝', `Logged on ${uniqueDaysLogged} days`,
+      `Consistent tracking is the #1 predictor of hitting financial goals. Well done.`);
+  }
+
+  // --- Rule: too many recurring subscriptions ---
+  const activeRec = db.planned.filter(p => p.recFrequency).length;
+  if (activeRec >= 5) {
+    const totalRec = db.planned.filter(p => p.recFrequency).reduce((s, p) => s + (+p.amount || 0), 0);
+    push('warning', '🔁', `${activeRec} active recurring expenses`,
+      `Total ${fmt(totalRec)} per cycle. Subscriptions creep up — audit whether every one is still worth it.`);
+  }
+
+  // --- Rule: income growing ---
+  const prevPeriodIncome = db.income
+    .filter(x => x.date >= prev30S && x.date <= prev30E)
+    .reduce((s, x) => s + (+x.amount || 0), 0);
+  const curPeriodIncome = db.income
+    .filter(x => x.date >= cur30S && x.date <= cur30E)
+    .reduce((s, x) => s + (+x.amount || 0), 0);
+  if (prevPeriodIncome >= 100000 && curPeriodIncome > prevPeriodIncome * 1.2) {
+    const growth = ((curPeriodIncome / prevPeriodIncome - 1) * 100).toFixed(0);
+    push('good', '🚀', `Income up ${growth}% vs last 30 days`,
+      `From ${fmt(prevPeriodIncome)} to ${fmt(curPeriodIncome)}. Consider directing the extra into savings or a goal.`);
+  } else if (prevPeriodIncome > 0 && curPeriodIncome < prevPeriodIncome * 0.7) {
+    const drop = ((1 - curPeriodIncome / prevPeriodIncome) * 100).toFixed(0);
+    push('warning', '📉', `Income down ${drop}% vs last 30 days`,
+      `From ${fmt(prevPeriodIncome)} to ${fmt(curPeriodIncome)}. Tighten discretionary spending or find replacement income.`);
+  }
+
+  // --- Rule: goal completion celebration ---
+  const doneGoals = db.goals.filter(g => g.target > 0 && goalSaved(g.id) >= g.target);
+  if (doneGoals.length) {
+    const g = doneGoals[0];
+    push('good', '🏆', `Goal reached: ${g.name}`,
+      `${g.icon || '🎯'} You hit ${fmt(g.target)}! Delete it or start a fresh goal to keep momentum.`);
+  }
+
+  // --- Rule: no goals at all ---
+  if (db.goals.length === 0 && totalIncome > 0) {
+    push('warning', '🎯', 'No savings goals set up yet',
+      `Goals turn vague "should save more" into "I'm ₮X toward Japan trip." Even one goal changes behavior.`);
+  }
+
+  // --- Rule: dining out call-out ---
+  const diningCats = db.categories.filter(c =>
+    /dining|restaurant|eat|food out|takeout|delivery|coffee/i.test(c.name || ''));
+  if (diningCats.length) {
+    const diningTotal = actual
+      .filter(x => diningCats.some(c => c.id === x.categoryId))
+      .reduce((s, x) => s + (+x.amount || 0), 0);
+    if (totalActual > 0 && diningTotal / totalActual > 0.15) {
+      const pct = (diningTotal / totalActual * 100).toFixed(0);
+      push('warning', '🍜', `Eating out is ${pct}% of spending`,
+        `${fmt(diningTotal)} on food-out categories. Cooking one extra meal a day at home could save ~30%.`);
+    }
+  }
+
+  // --- Rule: motivating challenge ---
+  if (totalIncome > 0 && totalActual > 0 && !tips.some(t => t.level === 'critical')) {
+    const suggestion = Math.round(totalActual * 0.05 / 1000) * 1000;
+    if (suggestion >= 5000) {
+      push('good', '💡', `Try the 5% challenge`,
+        `Cut just 5% off next period — about ${fmt(suggestion)}. Small, achievable, compounds.`);
+    }
+  }
+
   // --- Rule: nothing spent yet ---
   if (totalActual === 0 && totalIncome > 0) {
     push('good', '✨', 'No expenses recorded yet',
