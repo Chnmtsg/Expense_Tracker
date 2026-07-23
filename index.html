@@ -508,6 +508,37 @@
     box-shadow: 0 0 0 2px rgba(37,99,235,.2);
   }
 
+  /* Advisor */
+  .advisor-card { padding: 14px 16px; }
+  .advisor-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .advisor-title { font-size: 15px; font-weight: 700; }
+  .advisor-count {
+    background: var(--primary); color: white; font-size: 11px; font-weight: 700;
+    padding: 2px 10px; border-radius: 999px;
+  }
+  .advisor-count.good     { background: var(--success); }
+  .advisor-count.warning  { background: var(--warning); }
+  .advisor-count.critical { background: var(--danger); }
+  .advisor-tip {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px 12px; border-radius: 10px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .advisor-tip.critical { border-color: var(--danger);  background: rgba(239, 68, 68, .06); }
+  .advisor-tip.warning  { border-color: var(--warning); background: rgba(245, 158, 11, .06); }
+  .advisor-tip.good     { border-color: var(--success); background: rgba(16, 185, 129, .06); }
+  .advisor-tip .tip-icon { font-size: 22px; flex-shrink: 0; line-height: 1; }
+  .advisor-tip .tip-body { flex: 1; min-width: 0; }
+  .advisor-tip .tip-title { font-weight: 700; font-size: 13.5px; }
+  .advisor-tip .tip-message { font-size: 12.5px; color: var(--text-2); margin-top: 2px; line-height: 1.4; }
+  .advisor-more {
+    background: transparent; border: none; color: var(--primary);
+    cursor: pointer; font-size: 13px; font-weight: 600;
+    padding: 6px 0; margin-top: 4px;
+  }
+  .advisor-empty { text-align: center; color: var(--text-2); padding: 12px; font-size: 13px; }
+
   /* Quick amount buttons */
   .qa-row { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; align-items: center; }
   .qa-btn {
@@ -696,6 +727,14 @@
     <div class="kpi"><div class="label">Planned Balance</div><div class="value" id="kpiPlannedNet">₮0</div></div>
   </div>
 
+  <div class="card advisor-card">
+    <div class="advisor-head">
+      <span class="advisor-title">💡 Financial Advisor</span>
+      <span class="advisor-count" id="advisorCount">0</span>
+    </div>
+    <div id="advisorTips"></div>
+  </div>
+
   <div class="card">
     <h3>Needs / Wants / Savings</h3>
     <div class="donut-wrap">
@@ -724,10 +763,11 @@
   <div class="card salary-summary">
     <div class="label">Net Salary (this calculation)</div>
     <div class="value" id="sNet">₮0</div>
-    <div style="display:flex; gap:16px; margin-top:8px; font-size:12px; color:rgba(255,255,255,.9)">
+    <div style="display:flex; gap:16px; margin-top:8px; font-size:12px; color:rgba(255,255,255,.9); flex-wrap:wrap">
       <span>Gross: <b id="sGross">₮0</b></span>
       <span>SI: <b id="sSI">₮0</b></span>
       <span>WHT: <b id="sWHT">₮0</b></span>
+      <span>SI+WHT: <b id="sDeductions">₮0</b></span>
     </div>
   </div>
 
@@ -784,6 +824,7 @@
       <div class="kpi"><div class="label">OT+NT Pay</div><div class="value" id="sOTNTPay">₮0</div></div>
       <div class="kpi"><div class="label">Field Allow.</div><div class="value" id="sFieldPay">₮0</div></div>
       <div class="kpi accent"><div class="label">Gross</div><div class="value" id="sGross2">₮0</div></div>
+      <div class="kpi bad" style="grid-column: 1 / -1"><div class="label">SI + WHT (Total Deductions)</div><div class="value" id="sDeductions2">₮0</div></div>
     </div>
   </div>
 
@@ -1983,10 +2024,12 @@ function calcSalary() {
   document.getElementById('sFieldPay').textContent  = fmt(fieldPay);
   document.getElementById('sGross').textContent     = fmt(gross);
   document.getElementById('sGross2').textContent    = fmt(gross);
-  document.getElementById('sSI').textContent        = fmt(si);
-  document.getElementById('sWHT').textContent       = fmt(wht);
-  document.getElementById('sNet').textContent       = fmt(net);
-  return { normalPay, otPay, ntPay, otntPay, fieldPay, gross, si, wht, net };
+  document.getElementById('sSI').textContent         = fmt(si);
+  document.getElementById('sWHT').textContent        = fmt(wht);
+  document.getElementById('sDeductions').textContent  = fmt(si + wht);
+  document.getElementById('sDeductions2').textContent = fmt(si + wht);
+  document.getElementById('sNet').textContent        = fmt(net);
+  return { normalPay, otPay, ntPay, otntPay, fieldPay, gross, si, wht, net, deductions: si + wht };
 }
 sIds.forEach(id => document.getElementById(id).addEventListener('input', calcSalary));
 document.getElementById('sHourly').addEventListener('input', () => document.getElementById('sHourly').classList.remove('invalid'));
@@ -2717,6 +2760,197 @@ document.getElementById('btnReset').addEventListener('click', async () => {
 /* ============================================================
    Dashboard
 ============================================================ */
+/* ============================================================
+   💡 Expense Advisor — rule-based tips from data in the period
+============================================================ */
+function analyzeExpenses(income, actual, planned, from, to) {
+  const tips = [];
+  const push = (level, icon, title, message) => tips.push({ level, icon, title, message });
+
+  const totalIncome  = income.reduce((s, x) => s + (+x.amount || 0), 0);
+  const totalActual  = actual.reduce((s, x) => s + (+x.amount || 0), 0);
+  const totalPlanned = planned.reduce((s, x) => s + (+x.amount || 0), 0);
+
+  // --- Rule: spending vs income ---
+  if (totalIncome > 0 && totalActual > totalIncome) {
+    const gap = totalActual - totalIncome;
+    push('critical', '🚨', 'Spending more than earning',
+      `You spent ${fmt(gap)} more than you earned this period. Trim non-essentials or find extra income.`);
+  } else if (totalIncome > 0 && totalActual < totalIncome * 0.7) {
+    push('good', '🌱', 'Living below your means',
+      `Only ${(totalActual / totalIncome * 100).toFixed(0)}% of income spent — excellent breathing room.`);
+  }
+
+  // --- Rule: 50/30/20 needs / wants / savings ---
+  const byGroup = { Needs: 0, Wants: 0, Savings: 0 };
+  actual.forEach(x => {
+    const cat = db.categories.find(c => c.id === x.categoryId);
+    if (cat && byGroup[cat.group] !== undefined) byGroup[cat.group] += (+x.amount || 0);
+  });
+  const gTot = byGroup.Needs + byGroup.Wants + byGroup.Savings;
+  if (gTot > 0) {
+    const wPct = byGroup.Wants   / gTot * 100;
+    const sPct = byGroup.Savings / gTot * 100;
+    if (wPct > 40) {
+      push('warning', '🎢', `Wants are ${wPct.toFixed(0)}% of spending`,
+        `The 50/30/20 rule suggests keeping Wants under 30%. Pick one Wants category to cut back by 20% next month.`);
+    } else if (wPct <= 30 && wPct > 0) {
+      push('good', '👍', `Wants under control (${wPct.toFixed(0)}%)`,
+        `You're within the 30% guideline for Wants. Nicely balanced.`);
+    }
+    if (sPct < 10) {
+      push('critical', '💰', `Savings only ${sPct.toFixed(0)}% of spending`,
+        `Below 10% is risky. Aim for at least 20%. Set up a goal with a recurring contribution to force the habit.`);
+    } else if (sPct < 20) {
+      push('warning', '💰', `Savings at ${sPct.toFixed(0)}%`,
+        `Aim for 20%. Even a small recurring contribution to a goal moves the needle.`);
+    } else {
+      push('good', '🌟', `Savings healthy (${sPct.toFixed(0)}%)`,
+        `Great job! You're at or above the 20% savings target.`);
+    }
+  }
+
+  // --- Rule: category concentration ---
+  const byCat = {};
+  actual.forEach(x => {
+    byCat[x.categoryId] = (byCat[x.categoryId] || 0) + (+x.amount || 0);
+  });
+  const catRanked = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+  if (catRanked.length && totalActual > 0) {
+    const [topId, topAmt] = catRanked[0];
+    const topPct = topAmt / totalActual * 100;
+    if (topPct > 35) {
+      const cat = db.categories.find(c => c.id === topId);
+      push('warning', '⚠️', `${cat?.name || 'One category'} is ${topPct.toFixed(0)}% of expenses`,
+        `Any single category taking >35% is worth a hard look. Can you shrink ${cat?.name || 'it'} by 10-15%?`);
+    }
+  }
+
+  // --- Rule: planned vs actual overspending, per category ---
+  const plannedByCat = {};
+  planned.forEach(x => {
+    plannedByCat[x.categoryId] = (plannedByCat[x.categoryId] || 0) + (+x.amount || 0);
+  });
+  Object.entries(byCat).forEach(([catId, aAmt]) => {
+    const pAmt = plannedByCat[catId] || 0;
+    if (pAmt > 0 && aAmt > pAmt * 1.2) {
+      const cat = db.categories.find(c => c.id === catId);
+      const over = ((aAmt / pAmt - 1) * 100).toFixed(0);
+      push('warning', '📊', `${cat?.name || 'A category'} is ${over}% over budget`,
+        `Planned ${fmt(pAmt)}, spent ${fmt(aAmt)}. Either raise the plan or curb the spending.`);
+    }
+  });
+
+  // --- Rule: month-over-month spike (previous 30 days vs current 30 days) ---
+  const today = new Date(); today.setHours(0,0,0,0);
+  const cur30Start = new Date(today);   cur30Start.setDate(today.getDate() - 29);
+  const prev30End  = new Date(cur30Start); prev30End.setDate(prev30End.getDate() - 1);
+  const prev30Start= new Date(prev30End); prev30Start.setDate(prev30End.getDate() - 29);
+  const isoS = toLocalISO, cur30S = isoS(cur30Start), cur30E = isoS(today), prev30S = isoS(prev30Start), prev30E = isoS(prev30End);
+
+  const cur30ByCat = {}, prev30ByCat = {};
+  db.actual.forEach(x => {
+    if (x.date >= cur30S && x.date <= cur30E)  cur30ByCat[x.categoryId]  = (cur30ByCat[x.categoryId]  || 0) + (+x.amount || 0);
+    if (x.date >= prev30S && x.date <= prev30E) prev30ByCat[x.categoryId] = (prev30ByCat[x.categoryId] || 0) + (+x.amount || 0);
+  });
+  Object.entries(cur30ByCat).forEach(([catId, cur]) => {
+    const prev = prev30ByCat[catId] || 0;
+    if (prev >= 10000 && cur > prev * 1.5) {
+      const cat = db.categories.find(c => c.id === catId);
+      const growth = ((cur / prev - 1) * 100).toFixed(0);
+      push('warning', '📈', `${cat?.name || 'A category'} up ${growth}% vs last 30 days`,
+        `From ${fmt(prev)} to ${fmt(cur)}. Big jumps are usually signals worth investigating.`);
+    }
+  });
+
+  // --- Rule: goals falling behind ---
+  db.goals.forEach(g => {
+    if (!g.deadline || !g.target) return;
+    const saved = goalSaved(g.id);
+    if (saved >= g.target) return;
+    const create = parseISO(g.createdDate || todayISO());
+    const dead   = parseISO(g.deadline);
+    const totalDays = (dead - create) / 86400000;
+    const daysDone  = (today - create) / 86400000;
+    if (totalDays <= 0 || daysDone <= 0) return;
+    const expected = Math.min(1, daysDone / totalDays);
+    const actualPct = saved / g.target;
+    if (actualPct < expected - 0.15) {
+      push('warning', '🎯', `Goal "${g.name}" falling behind`,
+        `You're at ${(actualPct * 100).toFixed(0)}% but should be at about ${(expected * 100).toFixed(0)}% by now. Consider a bigger contribution or extending the deadline.`);
+    }
+  });
+
+  // --- Rule: too many small transactions ---
+  const smallExp = actual.filter(x => +x.amount < 5000).length;
+  if (smallExp >= 20) {
+    push('warning', '🍿', `${smallExp} small purchases (< ₮5K each)`,
+      `Small buys add up fast. Try a "no small spends" day/week — you'll be surprised how much sticks.`);
+  }
+
+  // --- Rule: nothing spent yet ---
+  if (totalActual === 0 && totalIncome > 0) {
+    push('good', '✨', 'No expenses recorded yet',
+      `Fresh period — nothing spent. Log expenses as they happen so the advisor can help.`);
+  }
+
+  // --- Rule: no data at all ---
+  if (totalIncome === 0 && totalActual === 0) {
+    push('good', '👋', 'Add data to get personal advice',
+      `Log some income and expenses (Income tab, Expenses tab) — the advisor turns your data into concrete tips.`);
+  }
+
+  // Sort: critical → warning → good
+  const order = { critical: 0, warning: 1, good: 2 };
+  tips.sort((a, b) => order[a.level] - order[b.level]);
+  return tips;
+}
+
+function renderAdvisor(income, actual, planned, from, to) {
+  const tips = analyzeExpenses(income, actual, planned, from, to);
+  const wrap = document.getElementById('advisorTips');
+  const badge = document.getElementById('advisorCount');
+  badge.textContent = tips.length;
+  const worst = tips[0]?.level || 'good';
+  badge.className = 'advisor-count ' + worst;
+
+  if (!tips.length) {
+    wrap.innerHTML = '<div class="advisor-empty">Add some income and expenses to get personalized tips.</div>';
+    return;
+  }
+  const shown = tips.slice(0, 3);
+  const hidden = tips.slice(3);
+  wrap.innerHTML = shown.map(t => `
+    <div class="advisor-tip ${t.level}">
+      <div class="tip-icon">${t.icon}</div>
+      <div class="tip-body">
+        <div class="tip-title">${escapeHTML(t.title)}</div>
+        <div class="tip-message">${escapeHTML(t.message)}</div>
+      </div>
+    </div>
+  `).join('') + (hidden.length ? `<button class="advisor-more" id="advisorSeeAll">See all ${tips.length} tips →</button>` : '');
+
+  const seeAll = document.getElementById('advisorSeeAll');
+  if (seeAll) seeAll.addEventListener('click', () => openAdvisorModal(tips));
+}
+
+function openAdvisorModal(tips) {
+  resetEditModalButtons();
+  document.getElementById('editModalTitle').textContent = '💡 All Advisor Tips';
+  document.getElementById('editModalBody').innerHTML = tips.map(t => `
+    <div class="advisor-tip ${t.level}">
+      <div class="tip-icon">${t.icon}</div>
+      <div class="tip-body">
+        <div class="tip-title">${escapeHTML(t.title)}</div>
+        <div class="tip-message">${escapeHTML(t.message)}</div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('editModalSave').style.display = 'none';
+  document.getElementById('editModalCancel').textContent = 'Close';
+  document.getElementById('editModal').classList.add('show');
+}
+
 function renderDashboard() {
   const { from, to } = getRange('dash');
   const sub = (from || to) ? `${from || '…'} → ${to || '…'}` : 'All time';
@@ -2753,6 +2987,9 @@ function renderDashboard() {
 
   // Planned vs Actual per category
   drawPvA(planned, actual);
+
+  // Advisor
+  renderAdvisor(income, actual, planned, from, to);
 
   // Monthly trend — honors the dashboard's date range
   drawMonthlyTrend(from, to);
